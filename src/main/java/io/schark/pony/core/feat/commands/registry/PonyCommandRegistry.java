@@ -25,6 +25,7 @@ import lombok.Getter;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.internal.utils.tuple.ImmutablePair;
 import net.dv8tion.jda.internal.utils.tuple.Pair;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.reflections.Reflections;
 
@@ -174,10 +175,10 @@ public class PonyCommandRegistry {
 	 * @param <V> output object type
 	 * @return solved annotation
 	 */
-	private <E extends PonyCommandExecutor, T extends Annotation, V> Set<V> assignAnnotation(Constructor<E> constructor,
+	private <E extends PonyCommandExecutor, T extends Annotation, V> @NotNull Set<V> assignAnnotation(Constructor<E> constructor,
 																							Class<T> annotation,
 																							Function<T, Collection<V>> getter) {
-		Set<V> result = new HashSet<>();
+		Set<V> result = Collections.emptySet();
 		Collection<V> anno = this.solveAnnotation(constructor, annotation, getter);
 		if (anno != null) {
 			result = new HashSet<>(anno);
@@ -272,7 +273,8 @@ public class PonyCommandRegistry {
 			//if channel is no guild but command is a guild command we need to reject - ALWAYS
 			if (channel instanceof GuildChannel guildChannel) {
 				//guild check
-				if (!access.getAllowedGuilds().contains(guildChannel.getGuild().getIdLong())) {
+				Set<Long> allowedGuilds = access.getAllowedGuilds();
+				if (!allowedGuilds.isEmpty() && !allowedGuilds.contains(guildChannel.getGuild().getIdLong())) {
 					return false;
 				}
 
@@ -289,15 +291,21 @@ public class PonyCommandRegistry {
 		}
 
 		//user check
-		if (access.getAllowedUsers().contains(author.getIdLong())) {
+		Set<Long> allowedUsers = access.getAllowedUsers();
+		if (allowedUsers.isEmpty() || allowedUsers.contains(author.getIdLong())) {
 			return true;
 		}
 
 		//channels
-		return access.getAllowedChannels().contains(channel.getIdLong());
+		Set<Long> allowedChannels = access.getAllowedChannels();
+		return allowedChannels.isEmpty() || allowedChannels.contains(channel.getIdLong());
 	}
 
 	private boolean hasAccess(Set<Long> roles, Member member) {
+		if (roles.isEmpty()) {
+			return true;
+		}
+
 		for (Role role : member.getRoles()) {
 			if (roles.contains(role.getIdLong())) {
 				return true;
