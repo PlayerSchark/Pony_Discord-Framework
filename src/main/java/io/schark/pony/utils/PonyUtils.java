@@ -1,6 +1,9 @@
 package io.schark.pony.utils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Set;
@@ -29,8 +32,11 @@ public class PonyUtils {
 			return builder.toString();
 	}
 
-	public static void setValue(Object object, String field, Object value) throws IllegalAccessException, NoSuchFieldException {
-		Class<?> clazz = object.getClass();
+	public static void setValue(Object object, String fieldName, Object newValue) throws NoSuchFieldException, IllegalAccessException {
+		PonyUtils.setValue(object, fieldName, newValue, object.getClass());
+	}
+
+	public static void setValue(Object object, String field, Object value, Class<?> clazz) throws IllegalAccessException, NoSuchFieldException {
 		Field f = clazz.getDeclaredField(field);
 		f.setAccessible(true);
 		f.set(object, value);

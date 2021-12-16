@@ -1,7 +1,6 @@
 package io.schark.pony.core;
 
 import io.schark.pony.Pony;
-import io.schark.pony.feat.commands.listener.PonyCommandListener;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -31,13 +30,11 @@ public abstract class PonyBot {
 		builder.setCompression(Compression.NONE);
 		builder.setActivity(this.getActivity());
 		builder.addEventListeners(this.getListeners());
-		return builder.build();
+		return this.jda = builder.build();
 	}
 
 	private Object[] getListeners() {
-		return new Object[]{
-			new PonyCommandListener(Pony.getManager())
-		};
+		return Pony.getInstance().getManager(PonyManagerType.LISTENER).getRegisterableListeners();
 	}
 
 	private Activity getActivity() {

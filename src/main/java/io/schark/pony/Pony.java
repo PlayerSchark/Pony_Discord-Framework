@@ -1,99 +1,155 @@
 package io.schark.pony;
 
 import io.schark.pony.core.PonyBot;
-import io.schark.pony.feat.commands.registry.CommandRegistry;
+import io.schark.pony.core.PonyConfig;
 import io.schark.pony.core.PonyManager;
+import io.schark.pony.core.PonyManagerType;
 import io.schark.pony.exception.PonyStartException;
 import io.schark.pony.utils.PonyUtils;
 import net.dv8tion.jda.api.JDA;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Player_Schark
  */
 public class Pony {
 
-	private static Properties CONFIG;
-	private static PonyBot PONY_BOT;
-	private static PonyManager PONY_MANAGER;
+	private static Pony INSTANCE;
+	private PonyConfig config;
+	private PonyBot ponyBot;
+	private List<PonyManagerType> managers = new ArrayList<>();
 
-
-	private static void startPony(String[] args) throws PonyStartException {
-		System.out.println("Starting Pony");
-		try {
-			System.out.println("Loading config");
-			Pony.loadConfig();
-			System.out.println("Starting Pony");
-			Pony.PONY_BOT = Pony.newPonyBot();
-			Pony.PONY_BOT.init(args);
-			System.out.println("Building JDA");
-			JDA jda = Pony.PONY_BOT.build();
-			System.out.println("Building Pony");
-			Pony.buildPony(jda);
-			try {
-				jda.awaitReady();
-			}
-			catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new PonyStartException();
-		}
-		System.out.println("Pony Started");
-	}
-
-	private static void buildPony(JDA jda) {
-		CommandRegistry registry = new CommandRegistry();
-		Pony.PONY_MANAGER = new PonyManager(jda, registry);
+	public static Pony getInstance() {
+		return Pony.INSTANCE;
 	}
 
 	public static void main(String[] args) throws PonyStartException {
-		Pony.startPony(args);
-		Pony.PONY_BOT.afterStart();
+		Pony.INSTANCE = new Pony();
+		Pony.INSTANCE.start(args);
+		Pony.INSTANCE.getPonyBot().afterStart();
 
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+		Runtime.getRuntime().addShutdownHook(Pony.INSTANCE.shutdownPony());
+	}
+
+	private void start(String[] args) throws PonyStartException {
+		System.out.println("Starting Pony");
+		try {
+			this.preparePony(args);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new PonyStartException("An error occoured while starting Pony");
+		}
+
+		this.injectJdaToManager();
+		System.out.println("Pony Started");
+	}
+
+	private void preparePony(String[] args) throws Exception {
+		System.out.println("Loading config");
+		this.loadConfig();
+		System.out.println("Building Pony");
+		this.build();
+		System.out.println("Initialize Bot");
+		this.ponyBot = this.newPonyBot();
+		this.ponyBot.init(args);
+		System.out.println("Building JDA");
+		JDA jda = this.ponyBot.build();
+		jda.awaitReady();
+	}
+
+	private void injectJdaToManager() {
+		System.out.println("Setting JDA");
+		for (PonyManager manager : this.getManagers()) {
+			manager.setJda(this.ponyBot.getJda());
+		}
+	}
+
+	private List<PonyManager> getManagers() {
+		List<PonyManager> managers = new ArrayList<>();
+		for (PonyManagerType manager : this.managers) {
+			managers.add(manager.getManager());
+		}
+		return managers;
+	}
+
+	private void build() {
+		System.out.println("Building Pony");
+		this.initManager();
+	}
+
+	private void initManager() {
+		System.out.println("Initialize Managers");
+		this.initManager(PonyManagerType.LISTENER);
+		this.initManager(PonyManagerType.COMMAND);
+	}
+
+	private void initManager(PonyManagerType type) {
+		PonyManager manager = type.getManager();
+		this.managers.add(type);
+		manager.init();
+		manager.setEnabled(true);
+	}
+
+	@NotNull private Thread shutdownPony() {
+		return new Thread(() -> {
 			System.out.println("Shutting down Pony");
-			Pony.PONY_BOT.beforeShutdown();
+			this.ponyBot.beforeShutdown();
 			System.out.println("Shutting down JDA");
-			Pony.PONY_BOT.getJda().shutdownNow();
+			this.ponyBot.getJda().shutdownNow();
 			System.out.println("JDA closed");
-			Pony.PONY_BOT.afterShutdown();
+			this.ponyBot.afterShutdown();
 			System.out.println("Pony closed. Thank you and good bye. :D");
-		}));
+		});
 	}
 
-	private static void injectToken() throws IOException, IllegalAccessException, NoSuchFieldException {
-		String path = Pony.CONFIG.getProperty("token");
+	private void injectToken(PonyBot bot) throws IOException, IllegalAccessException, NoSuchFieldException {
+		String path = this.config.getTokenPath();
 		InputStream input = Pony.class.getResourceAsStream("/" + path);
-		PonyUtils.setValue(Pony.PONY_BOT, "token", PonyUtils.getFileContent(input));
+		PonyUtils.setValue(bot, "token", PonyUtils.getFileContent(input).trim(), PonyBot.class);
 	}
 
 
-	private static void injectId() throws NoSuchFieldException, IllegalAccessException {
-		String rawId = Pony.CONFIG.getProperty("id");
-		long id = Long.parseLong(rawId);
-		PonyUtils.setValue(Pony.PONY_BOT, "id", id);
+	private void injectId(PonyBot ponyBot) throws NoSuchFieldException, IllegalAccessException, PonyStartException {
+		long id;
+		try {
+			id = this.config.getId();
+		} catch (NumberFormatException ex) {
+			throw new PonyStartException("Bot id could not be read");
+		}
+		PonyUtils.setValue(ponyBot, "id", id, PonyBot.class);
 	}
 
-	private static void loadConfig() throws IOException {
-			InputStream input = Pony.class.getResourceAsStream("/config.properties");
-			Pony.CONFIG = new Properties();
-			Pony.CONFIG.load(input);
+	private void loadConfig() throws IOException {
+		InputStream input = Pony.class.getResourceAsStream("/config.properties");
+		this.config = new PonyConfig();
+		this.config.load(input);
 	}
 
-	private static PonyBot newPonyBot() throws Exception {
-			String ponyBotMain = Pony.CONFIG.getProperty("main");
-			PonyBot ponyBot = (PonyBot) Class.forName(ponyBotMain).getConstructor().newInstance();
-			Pony.injectToken();
-			Pony.injectId();
-			return ponyBot;
+	private PonyBot newPonyBot() throws Exception {
+		String ponyBotMain = this.config.getPonyBotMain();
+		PonyBot ponyBot = (PonyBot) Class.forName(ponyBotMain).getConstructor().newInstance();
+		this.injectToken(ponyBot);
+		this.injectId(ponyBot);
+		return ponyBot;
 	}
 
-	public static PonyBot getPonyBot() {
-		return Pony.PONY_BOT;
+	public PonyBot getPonyBot() {
+		return this.ponyBot;
+	}
+
+	public PonyConfig getConfig() {
+		return this.config;
+	}
+
+	public <M extends PonyManager> M getManager(PonyManagerType<M> type) {
+		if (this.managers.contains(type)) {
+			return type.getManager();
+		}
+		return null;
 	}
 }
