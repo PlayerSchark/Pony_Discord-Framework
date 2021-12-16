@@ -5,4 +5,9 @@ package io.schark.pony.exception;
  */
 public class CommandRegisterException extends RuntimeException {
 
+	public CommandRegisterException(Exception exception) {
+		super();
+		exception.printStackTrace();
+	}
+
 }

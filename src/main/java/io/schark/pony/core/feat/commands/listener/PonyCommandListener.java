@@ -38,6 +38,10 @@ public class PonyCommandListener extends ListenerAdapter {
 		}
 
 		Message message = e.getMessage();
+		if (!message.getContentRaw().startsWith(this.manager.getPrefix())) {
+			return;
+		}
+
 		String[] splitted = this.splitMessage(message);
 		PonyLabel label = this.getLabel(splitted[0]);
 
@@ -76,7 +80,7 @@ public class PonyCommandListener extends ListenerAdapter {
 
 	private String[] splitMessage(Message message) {
 		String content = message.getContentRaw().trim().replaceAll(" +", " ");
-		String commandMessage = content.substring("!".length());
+		String commandMessage = content.substring(this.manager.getPrefix().length());
 		return commandMessage.split(" ");
 	}
 

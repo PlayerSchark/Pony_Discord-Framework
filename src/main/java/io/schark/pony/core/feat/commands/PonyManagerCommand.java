@@ -32,7 +32,7 @@ public class PonyManagerCommand extends PonyManager {
 			Pony.getInstance().getManager(PonyManagerType.LISTENER).registerListener(new PonyCommandListener(this));
 		}
 		catch (Exception e) {
-			throw  new CommandRegisterException();
+			throw new CommandRegisterException(e);
 		}
 	}
 
@@ -45,5 +45,9 @@ public class PonyManagerCommand extends PonyManager {
 
 	@Override public JDA getJda() {
 		return null;
+	}
+
+	public String getPrefix() {
+		return "!";
 	}
 }

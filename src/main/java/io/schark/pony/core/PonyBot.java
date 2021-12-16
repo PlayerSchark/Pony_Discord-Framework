@@ -29,7 +29,8 @@ public abstract class PonyBot {
 		builder.setBulkDeleteSplittingEnabled(false);
 		builder.setCompression(Compression.NONE);
 		builder.setActivity(this.getActivity());
-		builder.addEventListeners(this.getListeners());
+		Object[] listeners = this.getListeners();
+		builder.addEventListeners(listeners);
 		return this.jda = builder.build();
 	}
 

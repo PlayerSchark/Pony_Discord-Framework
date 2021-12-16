@@ -15,7 +15,6 @@ import io.schark.pony.core.feat.commands.annotation.options.BotUsable;
 import io.schark.pony.core.feat.commands.annotation.options.CaseSensitive;
 import io.schark.pony.core.feat.commands.annotation.options.SendTyping;
 import io.schark.pony.core.feat.commands.command.CommandInfo;
-import io.schark.pony.core.feat.commands.comp.PonyCommandComponent;
 import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutor;
 import io.schark.pony.core.feat.commands.executor.PonyCommandExecutor;
 import io.schark.pony.core.feat.commands.in.PonyLabel;
@@ -46,13 +45,18 @@ public class PonyCommandRegistry {
 	private BiMap<RegistryLabel, PonySlashCommandExecutor> slashCommands = HashBiMap.create();
 
 	private <E extends PonyChatCommandExecutor> void reflectCommands() {
-		String commandPackage = Pony.getInstance().getConfig().getCommandPackage();
-		if (commandPackage == null) {
-			this.noCommands = true;
-			return;
+		try {
+			String commandPackage = Pony.getInstance().getConfig().getCommandPackage();
+			if (commandPackage == null) {
+				this.noCommands = true;
+				return;
+			}
+			Set<Class<E>> commands = this.getSubTypes(commandPackage);
+			this.registerCommands(commands);
 		}
-		Set<Class<E>> commands = this.getSubTypes(commandPackage);
-		this.registerCommands(commands);
+		catch (Exception e) {
+			throw new CommandRegisterException(e);
+		}
 	}
 
 	@SuppressWarnings("unchecked")
@@ -69,14 +73,18 @@ public class PonyCommandRegistry {
 	}
 
 	private <E extends PonyCommandExecutor> void registerCommands(Set<Class<E>> commands) {
+		List<Class> blackListed =Arrays.asList(PonyChatCommandExecutor.class, PonySlashCommandExecutor.class);
 		for (Class<E> commandClass : commands) {
+			if (blackListed.contains(commandClass)) {
+				continue;
+			}
 			try {
-				Constructor<E> constructor = commandClass.getConstructor(String.class, PonyCommandComponent.class);
+				Constructor<E> constructor = commandClass.getConstructor();
 				Pair<RegistryLabel, E> registry = this.reflectAnnotations(constructor, commandClass);
 				this.put(registry);
 			}
 			catch (NoSuchMethodException e) {
-				throw new CommandRegisterException();
+				throw new CommandRegisterException(e);
 			}
 		}
 	}
@@ -115,21 +123,20 @@ public class PonyCommandRegistry {
 		boolean sendTyping = constructor.isAnnotationPresent(SendTyping.class);
 		boolean isCaseSensitive = constructor.isAnnotationPresent(CaseSensitive.class);
 
-		PonyFunction noRole = this.solveAnnotation(constructor, rolesClass, anno->this.function(anno.noAccessFunction()));
-		PonyFunction noUser = this.solveAnnotation(constructor, usersClass, anno->this.function(anno.noAccessFunction()));
-		PonyFunction noGuild = this.solveAnnotation(constructor, guildsClass, anno->this.function(anno.noAccessFunction()));
-		PonyFunction noChannel = this.solveAnnotation(constructor, channelsClass, anno->this.function(anno.noAccessFunction()));
+		PonyFunction noRole = this.solveAnnotation(constructor, rolesClass, anno->this.instanceFunction(anno.noAccessFunction()));
+		PonyFunction noUser = this.solveAnnotation(constructor, usersClass, anno->this.instanceFunction(anno.noAccessFunction()));
+		PonyFunction noGuild = this.solveAnnotation(constructor, guildsClass, anno->this.instanceFunction(anno.noAccessFunction()));
+		PonyFunction noChannel = this.solveAnnotation(constructor, channelsClass, anno->this.instanceFunction(anno.noAccessFunction()));
 
 		return new CommandInfo(roles, users, guilds, channels, botUsable, sendTyping, isCaseSensitive, noRole, noUser, noGuild, noChannel);
 	}
 
-	private PonyFunction function(Class<? extends PonyFunction> clazz) {
+	private PonyFunction instanceFunction(Class<? extends PonyFunction> clazz) {
 		try {
 			return clazz.getConstructor().newInstance();
 		}
 		catch (InstantiationException | NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-			e.printStackTrace();
-			throw new CommandRegisterException();
+			throw new CommandRegisterException(e);
 		}
 	}
 
@@ -152,7 +159,7 @@ public class PonyCommandRegistry {
 			return Sets.newHashSet(accessorIds);
 		}
 		catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-			throw new CommandRegisterException();
+			throw new CommandRegisterException(e);
 		}
 	}
 
@@ -171,9 +178,9 @@ public class PonyCommandRegistry {
 																							Class<T> annotation,
 																							Function<T, Collection<V>> getter) {
 		Set<V> result = new HashSet<>();
-		boolean isPresent = constructor.isAnnotationPresent(annotation);
-		if (isPresent) {
-			result = new HashSet<>(this.solveAnnotation(constructor, annotation, getter));
+		Collection<V> anno = this.solveAnnotation(constructor, annotation, getter);
+		if (anno != null) {
+			result = new HashSet<>(anno);
 		}
 		return result;
 	}
@@ -190,10 +197,13 @@ public class PonyCommandRegistry {
 	 * @param <V> ouput object type
 	 * @return all values from an annotation
 	 */
-	private <E, T extends Annotation, V> V solveAnnotation(Constructor<E> constructor,
+	@Nullable private <E, T extends Annotation, V> V solveAnnotation(Constructor<E> constructor,
 																Class<T> annotation,
 																Function<T, V> getter) {
 		T anno = constructor.getAnnotation(annotation);
+		if (anno == null) {
+			return null;
+		}
 		return getter.apply(anno);
 	}
 
@@ -211,7 +221,7 @@ public class PonyCommandRegistry {
 			return commandClass.getConstructor().newInstance();
 		}
 		catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-			throw new CommandRegisterException();
+			throw new CommandRegisterException(e);
 		}
 	}
 
