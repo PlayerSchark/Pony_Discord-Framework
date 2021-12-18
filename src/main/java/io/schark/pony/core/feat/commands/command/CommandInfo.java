@@ -1,6 +1,6 @@
 package io.schark.pony.core.feat.commands.command;
 
-import io.schark.pony.core.feat.commands.annotation.impl.PonyFunction;
+import io.schark.pony.core.feat.commands.annotation.impl.PonyRunnable;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.Nullable;
@@ -21,8 +21,12 @@ public class CommandInfo {
 	private final boolean botUsable;
 	private final boolean sendTyping;
 	private final boolean caseSensitive;
-	@Nullable private final PonyFunction noRole;
-	@Nullable private final PonyFunction noUser;
-	@Nullable private final PonyFunction noGuild;
-	@Nullable private final PonyFunction noChannel;
+	@Nullable private final PonyRunnable noRole;
+	@Nullable private final PonyRunnable noUser;
+	@Nullable private final PonyRunnable noGuild;
+	@Nullable private final PonyRunnable noChannel;
+	@Nullable private final String noRoleMessage;
+	@Nullable private final String noUserMessage;
+	@Nullable private final String noGuildMessage;
+	@Nullable private final String noChannelMessage;
 }

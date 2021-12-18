@@ -19,10 +19,12 @@ import java.lang.reflect.Method;
 public class PonyManagerCommand extends PonyManager {
 
 	private final PonyCommandRegistry registry = new PonyCommandRegistry();
+	private String prefix;
 
 	@Override public void init() {
 
 		try {
+			this.prefix = Pony.getInstance().getConfig().getPrefix();
 			this.registerCommands();
 
 			boolean noCommands = this.registry.isNoCommands();
@@ -37,7 +39,7 @@ public class PonyManagerCommand extends PonyManager {
 	}
 
 	private void registerCommands() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-		Method method = this.registry.getClass().getDeclaredMethod("reflectCommands");
+		Method method = this.registry.getClass().getDeclaredMethod("reflectExecutors");
 		method.setAccessible(true);
 		method.invoke(this.registry);
 		method.setAccessible(false);
@@ -48,6 +50,6 @@ public class PonyManagerCommand extends PonyManager {
 	}
 
 	public String getPrefix() {
-		return "!";
+		return this.prefix;
 	}
 }

@@ -1,6 +1,7 @@
 package io.schark.pony.core.feat.commands.executor;
 
 import io.schark.pony.core.feat.commands.command.PonyCommand;
+import io.schark.pony.core.feat.commands.comp.PonyCommandComponents;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -15,4 +16,5 @@ public abstract class PonyCommandExecutor {
 
 	public abstract String execute(PonyCommand command);
 
+	public abstract PonyCommandComponents getComponents();
 }

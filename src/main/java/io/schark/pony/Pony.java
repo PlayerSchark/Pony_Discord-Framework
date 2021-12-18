@@ -23,6 +23,7 @@ public class Pony {
 	private PonyConfig config;
 	private PonyBot ponyBot;
 	private List<PonyManagerType> managers = new ArrayList<>();
+	private boolean notReady = true;
 
 	public static Pony getInstance() {
 		return Pony.INSTANCE;
@@ -34,6 +35,12 @@ public class Pony {
 		Pony.INSTANCE.getPonyBot().afterStart();
 
 		Runtime.getRuntime().addShutdownHook(Pony.INSTANCE.shutdownPony());
+	}
+
+	public void awaitReady() throws InterruptedException {
+		while (this.notReady) {
+				Thread.sleep(10);
+		}
 	}
 
 	private void start(String[] args) throws PonyStartException {
@@ -52,14 +59,17 @@ public class Pony {
 	private void preparePony(String[] args) throws Exception {
 		System.out.println("Loading config");
 		this.loadConfig();
-		System.out.println("Building Pony");
-		this.build();
 		System.out.println("Initialize Bot");
 		this.ponyBot = this.newPonyBot();
+		System.out.println("Building Pony");
+		this.build();
+		System.out.println("Setting PonyBot Values");
+		this.injectBot();
 		this.ponyBot.init(args);
 		System.out.println("Building JDA");
 		JDA jda = this.ponyBot.build();
 		jda.awaitReady();
+		this.notReady = false;
 	}
 
 	private void injectJdaToManager() {
@@ -98,6 +108,7 @@ public class Pony {
 	@NotNull private Thread shutdownPony() {
 		return new Thread(() -> {
 			System.out.println("Shutting down Pony");
+			PonyManagerType.COMMAND.getManager().getRegistry().shutdown();
 			this.ponyBot.beforeShutdown();
 			System.out.println("Shutting down JDA");
 			this.ponyBot.getJda().shutdownNow();
@@ -107,10 +118,19 @@ public class Pony {
 		});
 	}
 
+	private void injectBot() throws IOException, NoSuchFieldException, IllegalAccessException, PonyStartException {
+		this.injectToken(this.getPonyBot());
+		this.injectId(this.getPonyBot());
+		this.injectPrefix(this.getPonyBot());
+	}
+
 	private void injectToken(PonyBot bot) throws IOException, IllegalAccessException, NoSuchFieldException {
 		String path = this.config.getTokenPath();
 		InputStream input = Pony.class.getResourceAsStream("/" + path);
-		PonyUtils.setValue(bot, "token", PonyUtils.getFileContent(input).trim(), PonyBot.class);
+		String[] fileContent = PonyUtils.getFileContent(input).split("\n");
+		int line = this.config.getTokenLine();
+		String token = fileContent[line];
+		PonyUtils.setValue(bot, "token", token, PonyBot.class);
 	}
 
 
@@ -124,6 +144,11 @@ public class Pony {
 		PonyUtils.setValue(ponyBot, "id", id, PonyBot.class);
 	}
 
+	private void injectPrefix(PonyBot bot) throws IllegalAccessException, NoSuchFieldException {
+		String prefix = this.config.getPrefix();
+		PonyUtils.setValue(bot, "prefix", prefix, PonyBot.class);
+	}
+
 	private void loadConfig() throws IOException {
 		InputStream input = Pony.class.getResourceAsStream("/config.properties");
 		this.config = new PonyConfig();
@@ -132,10 +157,7 @@ public class Pony {
 
 	private PonyBot newPonyBot() throws Exception {
 		String ponyBotMain = this.config.getPonyBotMain();
-		PonyBot ponyBot = (PonyBot) Class.forName(ponyBotMain).getConstructor().newInstance();
-		this.injectToken(ponyBot);
-		this.injectId(ponyBot);
-		return ponyBot;
+		return (PonyBot) Class.forName(ponyBotMain).getConstructor().newInstance();
 	}
 
 	public PonyBot getPonyBot() {
