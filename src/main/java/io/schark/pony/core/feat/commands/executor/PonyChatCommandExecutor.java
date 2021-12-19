@@ -1,11 +1,11 @@
 package io.schark.pony.core.feat.commands.executor;
 
-import io.schark.pony.core.feat.commands.comp.PonyCommandComponents;
-import io.schark.pony.core.feat.commands.comp.PonyComponentType;
+import io.schark.pony.core.feat.commands.command.PonyChatCommand;
+import io.schark.pony.core.feat.commands.command.PonyCommandBase;
+import io.schark.pony.core.feat.commands.command.PonyGuildCommand;
+import io.schark.pony.core.feat.commands.in.PonyArg;
 import lombok.Getter;
-
-import java.util.ArrayList;
-import java.util.Arrays;
+import net.dv8tion.jda.api.events.Event;
 
 /**
  * @author Player_Schark
@@ -13,29 +13,33 @@ import java.util.Arrays;
 @Getter
 public abstract class PonyChatCommandExecutor extends PonyCommandExecutor {
 
-	private final ArrayList<PonyCommandComponents> components = new ArrayList<>();
 	private final boolean guildCommand;
 
-	public PonyChatCommandExecutor(String label) {
-		this(label, true);
+	public PonyChatCommandExecutor(String label, String description) {
+		this(label, description, false);
 	}
 
-	public PonyChatCommandExecutor(String label, boolean publicCommand) {
-		super(label);
+	public PonyChatCommandExecutor(String label, String description, boolean publicCommand) {
+		super(label, description);
 		this.guildCommand = publicCommand;
 	}
 
-	public PonyChatCommandExecutor(String label, PonyCommandComponents... args) {
-		super(label);
-		this.guildCommand = true;
-		this.components.addAll(Arrays.asList(args));
+	@Override public String ponyExecute(PonyCommandBase<? extends Event, ? extends PonyArg<?>> command) {
+		return switch (command) {
+			case PonyGuildCommand cmd -> this.executeCommand(cmd);
+			case PonyChatCommand cmd -> this.executeCommand(cmd);
+			default -> throw new IllegalStateException("Unexpected value: " + command);
+		};
 	}
 
-	public void addArgument(PonyCommandComponents arg) {
-		this.components.add(arg);
+	private String executeCommand(PonyGuildCommand cmd) {
+		if (this instanceof PonyGuildCommandExecutable executable) {
+			return executable.executeCommand(cmd);
+		}
+		else {
+			throw new IllegalStateException("PonyChatCommandExecutor must implement PonyGuildCommandExecutable");
+		}
 	}
 
-	public PonyCommandComponents getComponents() {
-		return new PonyCommandComponents("say", "hello there", PonyComponentType.COMMAND);
-	}
+	public abstract String executeCommand(PonyChatCommand command);
 }

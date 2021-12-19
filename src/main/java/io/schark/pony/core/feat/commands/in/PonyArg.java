@@ -20,18 +20,15 @@ import java.util.stream.Collectors;
  */
 @Getter
 @RequiredArgsConstructor
-public class PonyArg {
+public abstract class PonyArg<T> {
 
 	private final JDA jda;
-	private final String contentRaw;
-
-	public String getContent() {
-		return this.contentRaw.toLowerCase();
-	}
+	private final String contentAsString;
+	private final T content;
 
 	public boolean hasMention() {
 		for (Message.MentionType type : Message.MentionType.values()) {
-			boolean matches = type.getPattern().matcher(this.contentRaw).matches();
+			boolean matches = type.getPattern().matcher(this.contentAsString).matches();
 			if (matches) {
 				return true;
 			}
@@ -49,8 +46,10 @@ public class PonyArg {
 		return Collections.unmodifiableList(mentions);
 	}
 
-	private <T extends IMentionable> List<T> handleMentions(Message.MentionType type, Function<String, T> mapper) {
-		Matcher matcher = type.getPattern().matcher(this.getContentRaw());
+	private <M extends IMentionable> List<M> handleMentions(Message.MentionType type, Function<String, M> mapper) {
+		Matcher matcher = type.getPattern().matcher(this.getContentAsString());
 		return matcher.results().map(MatchResult::group).map(mapper).collect(Collectors.toList());
 	}
+
+	public abstract PonyArg<String> getAsString();
 }

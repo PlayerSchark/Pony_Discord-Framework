@@ -54,4 +54,15 @@ public class PonyUtils {
 		}
 		return getter.get();
 	}
+
+	public static void await(Supplier<Boolean> isTrue) {
+		while (!isTrue.get()) {
+			try {
+				Thread.sleep(25L);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }

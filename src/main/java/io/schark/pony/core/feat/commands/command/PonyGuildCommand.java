@@ -1,20 +1,31 @@
 package io.schark.pony.core.feat.commands.command;
 
-import io.schark.pony.core.feat.commands.in.PonyArg;
-import io.schark.pony.core.feat.commands.in.PonyLabel;
-import net.dv8tion.jda.api.entities.IMentionable;
-import net.dv8tion.jda.api.entities.Message;
+import io.schark.pony.core.feat.commands.in.PonyChatLabel;
+import io.schark.pony.core.feat.commands.in.PonyGuildArg;
+import lombok.Getter;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 
 import java.util.List;
 
 /**
  * @author Player_Schark
  */
-public class PonyGuildCommand extends PonyPublicCommand {
+@Getter
+public class PonyGuildCommand extends PonyCommandBase<SlashCommandEvent, PonyGuildArg<?>> implements PonyCommand {
 
-	public PonyGuildCommand(IMentionable sender, Message message, MessageChannel channel,
-					PonyLabel label, List<PonyArg> args) {
-		super(sender, message, channel, label, args);
+	private final InteractionHook hook;
+
+	public PonyGuildCommand(SlashCommandEvent e, Member sender, InteractionHook hook, MessageChannel channel,
+					PonyChatLabel label, List<PonyGuildArg<?>> args) {
+		super(e, sender, channel, label, args);
+		this.hook = hook;
+	}
+
+	@Override
+	public Member getSender() {
+		return (Member) super.getSender();
 	}
 }

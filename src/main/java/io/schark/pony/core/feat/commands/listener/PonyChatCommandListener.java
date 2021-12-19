@@ -3,12 +3,13 @@ package io.schark.pony.core.feat.commands.listener;
 import io.schark.pony.Pony;
 import io.schark.pony.core.feat.commands.PonyManagerCommand;
 import io.schark.pony.core.feat.commands.command.CommandInfo;
-import io.schark.pony.core.feat.commands.command.PonyCommand;
-import io.schark.pony.core.feat.commands.command.PonyPrivateCommand;
-import io.schark.pony.core.feat.commands.command.PonyPublicCommand;
+import io.schark.pony.core.feat.commands.command.PonyChatCommand;
+import io.schark.pony.core.feat.commands.command.PonyPrivateChatCommand;
+import io.schark.pony.core.feat.commands.command.PonyPublicChatCommand;
 import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutor;
 import io.schark.pony.core.feat.commands.in.PonyArg;
-import io.schark.pony.core.feat.commands.in.PonyLabel;
+import io.schark.pony.core.feat.commands.in.PonyChatArg;
+import io.schark.pony.core.feat.commands.in.PonyChatLabel;
 import io.schark.pony.exception.CommandProcessException;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
@@ -27,7 +28,7 @@ import java.util.List;
  * @author Player_Schark
  */
 @RequiredArgsConstructor
-public class PonyCommandListener extends ListenerAdapter {
+public class PonyChatCommandListener extends ListenerAdapter {
 
 	private final PonyManagerCommand manager;
 
@@ -43,13 +44,13 @@ public class PonyCommandListener extends ListenerAdapter {
 		}
 
 		String[] splitted = this.splitMessage(message);
-		PonyLabel label = this.getLabel(splitted[0]);
+		PonyChatLabel label = this.getLabel(splitted[0]);
 
-		if (!this.manager.getRegistry().isRegistered(label.getContentRaw())) {
+		if (!this.manager.getRegistry().isRegistered(label.getContent())) {
 			return;
 		}
 
-		PonyChatCommandExecutor executor = this.manager.getRegistry().get(label);
+		PonyChatCommandExecutor executor = this.manager.getRegistry().getChatCommand(label);
 
 		if (executor == null) {
 			throw  new CommandProcessException();
@@ -60,20 +61,20 @@ public class PonyCommandListener extends ListenerAdapter {
 		}
 
 		boolean guildCommand = executor.isGuildCommand();
-		PonyCommand command = this.parseCommandMessage(guildCommand, splitted, message, label);
+		PonyChatCommand command = this.parseCommandMessage(e, guildCommand, splitted, message, label);
 		this.execute(executor, command);
 	}
 
-	private void execute(PonyChatCommandExecutor executor, PonyCommand command) {
+	private void execute(PonyChatCommandExecutor executor, PonyChatCommand command) {
 		MessageChannel channel = command.getMessage().getChannel();
 		CommandInfo commandInfo = this.manager.getRegistry().getcommandInfo(executor);
 		if (commandInfo.isSendTyping()) {
 			channel.sendTyping().queue();
 		}
 
-		String answer = executor.execute(command);
+		String answer = executor.ponyExecute(command);
 
-		if (answer != null) {
+		if (answer != null && !answer.isEmpty()) {
 			channel.sendMessage(answer).queue();
 		}
 	}
@@ -84,35 +85,35 @@ public class PonyCommandListener extends ListenerAdapter {
 		return commandMessage.split(" ");
 	}
 
-	private PonyLabel getLabel(String rawLabel) {
+	private PonyChatLabel getLabel(String rawLabel) {
 		JDA jda = this.manager.getJda();
-		return new PonyLabel(jda, rawLabel);
+		return new PonyChatLabel(jda, rawLabel);
 	}
 
-	private PonyCommand parseCommandMessage(boolean guildCommand, String[] splitted, Message message, PonyLabel label) {
+	private PonyChatCommand parseCommandMessage(MessageReceivedEvent e, boolean guildCommand, String[] splitted, Message message, PonyChatLabel label) {
 		JDA jda = this.manager.getJda();
 		IMentionable sender = this.getSender(message);
 		MessageChannel channel = message.getChannel();
-		List<PonyArg> finalArgs = this.packArgs(jda, splitted);
+		List<PonyArg<String>> finalArgs = this.packArgs(jda, splitted);
 
-		return this.getCommand(guildCommand, sender, message, channel, label, finalArgs);
+		return this.getCommand(e, guildCommand, sender, message, channel, label, finalArgs);
 	}
 
 	private IMentionable getSender(Message message) {
 		return message.isFromGuild() ? message.getMember() : message.getAuthor();
 	}
 
-	private List<PonyArg> packArgs(JDA jda, String[] splitted) {
-		List<PonyArg> ponyArgs = new ArrayList<>();
+	private List<PonyArg<String>> packArgs(JDA jda, String[] splitted) {
+		List<PonyArg<String>> ponyArgs = new ArrayList<>();
 		List<String> args = new ArrayList<>(Arrays.asList(splitted).subList(1, splitted.length));
 		for (String arg : args) {
-			ponyArgs.add(new PonyArg(jda, arg));
+			ponyArgs.add(new PonyChatArg(jda, arg));
 		}
 		return Collections.unmodifiableList(ponyArgs);
 	}
 
-	private PonyCommand getCommand(boolean guildCommand, IMentionable sender, Message message, MessageChannel channel, PonyLabel label, List<PonyArg> args) {
-		return guildCommand ? new PonyPublicCommand(sender, message, channel, label, args) :
-						new PonyPrivateCommand(sender, message, channel, label, args);
+	private PonyChatCommand getCommand(MessageReceivedEvent e, boolean guildCommand, IMentionable sender, Message message, MessageChannel channel, PonyChatLabel label, List<PonyArg<String>> args) {
+		return guildCommand ? new PonyPublicChatCommand(e, sender, message, channel, label, args) :
+						new PonyPrivateChatCommand(e, sender, message, channel, label, args);
 	}
 }

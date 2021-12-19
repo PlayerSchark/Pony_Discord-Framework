@@ -31,4 +31,8 @@ public class PonyConfig extends Properties {
 	public String getPrefix() {
 		return this.getProperty("prefix");
 	}
+
+	public boolean unregisterCommands() {
+		return Boolean.parseBoolean(this.getProperty("unregisterCommands"));
+	}
 }

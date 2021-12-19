@@ -1,14 +1,14 @@
 package io.schark.pony;
 
-import io.schark.pony.core.PonyBot;
-import io.schark.pony.core.PonyConfig;
-import io.schark.pony.core.PonyManager;
-import io.schark.pony.core.PonyManagerType;
+import io.schark.pony.core.*;
+import io.schark.pony.core.feat.PonyManagerListener;
 import io.schark.pony.exception.PonyStartException;
 import io.schark.pony.utils.PonyUtils;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
 import org.jetbrains.annotations.NotNull;
 
+import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -17,24 +17,23 @@ import java.util.List;
 /**
  * @author Player_Schark
  */
-public class Pony {
+public final class Pony {
 
-	private static Pony INSTANCE;
+	private final static Pony INSTANCE = new Pony();
 	private PonyConfig config;
 	private PonyBot ponyBot;
 	private List<PonyManagerType> managers = new ArrayList<>();
 	private boolean notReady = true;
+	private PonyInjector injector;
 
 	public static Pony getInstance() {
 		return Pony.INSTANCE;
 	}
 
 	public static void main(String[] args) throws PonyStartException {
-		Pony.INSTANCE = new Pony();
+		Runtime.getRuntime().addShutdownHook(Pony.INSTANCE.shutdownPony());
 		Pony.INSTANCE.start(args);
 		Pony.INSTANCE.getPonyBot().afterStart();
-
-		Runtime.getRuntime().addShutdownHook(Pony.INSTANCE.shutdownPony());
 	}
 
 	public void awaitReady() throws InterruptedException {
@@ -63,13 +62,27 @@ public class Pony {
 		this.ponyBot = this.newPonyBot();
 		System.out.println("Building Pony");
 		this.build();
-		System.out.println("Setting PonyBot Values");
-		this.injectBot();
+		System.out.println("Injecting PonyBot");
+		this.injector = new PonyInjector(this.ponyBot, this.config);
+		this.injector.injectBot();
 		this.ponyBot.init(args);
 		System.out.println("Building JDA");
-		JDA jda = this.ponyBot.build();
-		jda.awaitReady();
+		JDA jda = this.buildJda();
 		this.notReady = false;
+	}
+
+	private JDA buildJda() throws LoginException, InterruptedException, NoSuchFieldException, IllegalAccessException {
+		JDABuilder builder = this.ponyBot.build();
+		PonyManagerListener manager = Pony.getInstance().getManager(PonyManagerType.LISTENER);
+		if (manager != null) {
+			Object[] listeners = manager.getRegisterableListeners();
+			builder.addEventListeners(listeners);
+		}
+		builder.setEnableShutdownHook(false);
+		JDA jda = builder.build();
+		jda.awaitReady();
+		this.injector.injectJda(jda);
+		return jda;
 	}
 
 	private void injectJdaToManager() {
@@ -107,46 +120,16 @@ public class Pony {
 
 	@NotNull private Thread shutdownPony() {
 		return new Thread(() -> {
+			this.ponyBot.beforeShutdown();
 			System.out.println("Shutting down Pony");
 			PonyManagerType.COMMAND.getManager().getRegistry().shutdown();
-			this.ponyBot.beforeShutdown();
 			System.out.println("Shutting down JDA");
 			this.ponyBot.getJda().shutdownNow();
+			PonyUtils.await(()->this.ponyBot.getJda().getStatus() == JDA.Status.SHUTDOWN);
 			System.out.println("JDA closed");
 			this.ponyBot.afterShutdown();
 			System.out.println("Pony closed. Thank you and good bye. :D");
-		});
-	}
-
-	private void injectBot() throws IOException, NoSuchFieldException, IllegalAccessException, PonyStartException {
-		this.injectToken(this.getPonyBot());
-		this.injectId(this.getPonyBot());
-		this.injectPrefix(this.getPonyBot());
-	}
-
-	private void injectToken(PonyBot bot) throws IOException, IllegalAccessException, NoSuchFieldException {
-		String path = this.config.getTokenPath();
-		InputStream input = Pony.class.getResourceAsStream("/" + path);
-		String[] fileContent = PonyUtils.getFileContent(input).split("\n");
-		int line = this.config.getTokenLine();
-		String token = fileContent[line];
-		PonyUtils.setValue(bot, "token", token, PonyBot.class);
-	}
-
-
-	private void injectId(PonyBot ponyBot) throws NoSuchFieldException, IllegalAccessException, PonyStartException {
-		long id;
-		try {
-			id = this.config.getId();
-		} catch (NumberFormatException ex) {
-			throw new PonyStartException("Bot id could not be read");
-		}
-		PonyUtils.setValue(ponyBot, "id", id, PonyBot.class);
-	}
-
-	private void injectPrefix(PonyBot bot) throws IllegalAccessException, NoSuchFieldException {
-		String prefix = this.config.getPrefix();
-		PonyUtils.setValue(bot, "prefix", prefix, PonyBot.class);
+		}, "Pony Shutdown Hook");
 	}
 
 	private void loadConfig() throws IOException {
