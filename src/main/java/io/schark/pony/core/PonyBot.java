@@ -9,7 +9,11 @@ import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.Compression;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -65,5 +69,14 @@ public abstract class PonyBot {
 
 	public Guild getGuildById(Long guildId) {
 		return this.getById(guildId, this.jda::getGuildById, "GuildId");
+	}
+
+	@NotNull public Set<Long> getGuildIds() {
+		Set<Long> guildIds = new HashSet<>();
+		List<Guild> guilds = this.jda.getGuilds();
+		for (Guild guild : guilds) {
+			guildIds.add(guild.getIdLong());
+		}
+		return guildIds;
 	}
 }

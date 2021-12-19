@@ -2,6 +2,7 @@ package io.schark.pony.core.feat.commands.executor;
 
 import io.schark.pony.core.feat.commands.command.IPonyDiscordCommand;
 import io.schark.pony.core.feat.commands.command.PonyDiscordCommand;
+import io.schark.pony.core.feat.commands.command.PonyGuildCommand;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.RestAction;
@@ -32,4 +33,5 @@ public interface PonyDiscordCommandExecutable extends PonyCommandExecutable {
 
 	String executeCommand(PonyDiscordCommand command);
 
+	void reject(PonyGuildCommand command);
 }

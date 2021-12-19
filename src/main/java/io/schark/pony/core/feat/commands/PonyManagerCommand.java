@@ -5,7 +5,7 @@ import io.schark.pony.core.PonyManager;
 import io.schark.pony.core.PonyManagerType;
 import io.schark.pony.core.feat.PonyManagerListener;
 import io.schark.pony.core.feat.commands.listener.PonyChatCommandListener;
-import io.schark.pony.core.feat.commands.listener.PonyGuildCommandListener;
+import io.schark.pony.core.feat.commands.listener.PonyDiscordCommandListener;
 import io.schark.pony.core.feat.commands.registry.PonyCommandRegistry;
 import io.schark.pony.exception.CommandRegisterException;
 import lombok.Getter;
@@ -36,7 +36,7 @@ public class PonyManagerCommand extends PonyManager {
 			PonyManagerListener listener = Pony.getInstance().getManager(PonyManagerType.LISTENER);
 			if (listener != null) {
 				listener.registerListener(new PonyChatCommandListener(this));
-				listener.registerListener(new PonyGuildCommandListener(this));
+				listener.registerListener(new PonyDiscordCommandListener(this));
 			}
 		}
 		catch (Exception e) {

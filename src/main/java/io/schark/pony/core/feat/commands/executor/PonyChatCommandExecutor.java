@@ -11,7 +11,7 @@ import net.dv8tion.jda.api.events.Event;
  * @author Player_Schark
  */
 @Getter
-public abstract class PonyChatCommandExecutor extends PonyCommandExecutor {
+public abstract class PonyChatCommandExecutor extends PonyCommandExecutor implements PonyChatCommandExecutable {
 
 	private final boolean guildCommand;
 
@@ -41,5 +41,5 @@ public abstract class PonyChatCommandExecutor extends PonyCommandExecutor {
 		}
 	}
 
-	public abstract String executeCommand(PonyChatCommand command);
+	@Override public abstract String executeCommand(PonyChatCommand command);
 }

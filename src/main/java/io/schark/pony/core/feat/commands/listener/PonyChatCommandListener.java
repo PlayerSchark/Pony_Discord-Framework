@@ -2,14 +2,16 @@ package io.schark.pony.core.feat.commands.listener;
 
 import io.schark.pony.Pony;
 import io.schark.pony.core.feat.commands.PonyManagerCommand;
-import io.schark.pony.core.feat.commands.command.CommandInfo;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
 import io.schark.pony.core.feat.commands.command.PonyPrivateChatCommand;
 import io.schark.pony.core.feat.commands.command.PonyPublicChatCommand;
+import io.schark.pony.core.feat.commands.command.info.PonyChatCommandInfo;
+import io.schark.pony.core.feat.commands.command.info.PonyCommandInfo;
 import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutor;
 import io.schark.pony.core.feat.commands.in.PonyArg;
 import io.schark.pony.core.feat.commands.in.PonyChatArg;
 import io.schark.pony.core.feat.commands.in.PonyChatLabel;
+import io.schark.pony.core.feat.commands.registry.PonyCommandRegistry;
 import io.schark.pony.exception.CommandProcessException;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
@@ -17,7 +19,9 @@ import net.dv8tion.jda.api.entities.IMentionable;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +37,11 @@ public class PonyChatCommandListener extends ListenerAdapter {
 	private final PonyManagerCommand manager;
 
 	@Override
+	public void onPrivateMessageReceived(@NotNull PrivateMessageReceivedEvent e) {
+		//TODO merge with method down here
+	}
+
+	@Override
 	public void onMessageReceived(MessageReceivedEvent e) {
 		if (e.getAuthor().getIdLong() == Pony.getInstance().getPonyBot().getId()) {
 			return;
@@ -46,17 +55,23 @@ public class PonyChatCommandListener extends ListenerAdapter {
 		String[] splitted = this.splitMessage(message);
 		PonyChatLabel label = this.getLabel(splitted[0]);
 
-		if (!this.manager.getRegistry().isRegistered(label.getContent())) {
+		PonyCommandRegistry registry = this.manager.getRegistry();
+		if (!registry.isChatCommandRegistered(label.getContent())) {
 			return;
 		}
 
-		PonyChatCommandExecutor executor = this.manager.getRegistry().getChatCommand(label);
+		PonyChatCommandExecutor executor = (PonyChatCommandExecutor) registry.getChatCommand(label);
 
 		if (executor == null) {
-			throw  new CommandProcessException();
+			throw new CommandProcessException();
 		}
 
-		if (!this.manager.getRegistry().hasAccess(e.getMessage(), executor)) {
+		if (!executor.isGuildCommand()) {
+			return;
+		}
+
+		PonyChatCommandInfo info = (PonyChatCommandInfo) registry.getChatCommandInfo(executor);
+		if (!info.hasAccess(e)) {
 			return;
 		}
 
@@ -67,7 +82,7 @@ public class PonyChatCommandListener extends ListenerAdapter {
 
 	private void execute(PonyChatCommandExecutor executor, PonyChatCommand command) {
 		MessageChannel channel = command.getMessage().getChannel();
-		CommandInfo commandInfo = this.manager.getRegistry().getcommandInfo(executor);
+		PonyCommandInfo commandInfo = this.manager.getRegistry().getChatCommandInfo(executor);
 		if (commandInfo.isSendTyping()) {
 			channel.sendTyping().queue();
 		}

@@ -2,9 +2,11 @@ package io.schark.pony.core.feat.commands.listener;
 
 import io.schark.pony.core.feat.commands.PonyManagerCommand;
 import io.schark.pony.core.feat.commands.command.PonyGuildCommand;
-import io.schark.pony.core.feat.commands.executor.PonyGuildCommandExecutable;
+import io.schark.pony.core.feat.commands.command.info.PonyDiscordCommandInfo;
+import io.schark.pony.core.feat.commands.executor.PonyDiscordCommandExecutor;
 import io.schark.pony.core.feat.commands.in.PonyChatLabel;
 import io.schark.pony.core.feat.commands.in.PonyGuildArg;
+import io.schark.pony.core.feat.commands.registry.PonyCommandRegistry;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Member;
@@ -22,22 +24,35 @@ import java.util.List;
  * @author Player_Schark
  */
 @RequiredArgsConstructor
-public class PonyGuildCommandListener extends ListenerAdapter {
-
+public class PonyDiscordCommandListener extends ListenerAdapter {
 
 	private final PonyManagerCommand manager;
 
 	@Override
 	public void onSlashCommand(SlashCommandEvent e) {
-		PonyGuildCommandExecutable executor = this.manager.getRegistry().getGuildCommand(e.getName());
 		Member member = e.getMember();
 		InteractionHook hook = e.getHook();
 		MessageChannel channel = e.getChannel();
 		PonyChatLabel label = new PonyChatLabel(e.getJDA(), e.getName());
 		List<PonyGuildArg<?>> args = this.parseOptions(e.getOptions());
-		PonyGuildCommand command =  new PonyGuildCommand(e, member, hook, channel, label, args);
-		String result = executor.ponyExecute(command);
-		executor.afterExecute(command, result);
+		PonyGuildCommand command = new PonyGuildCommand(e, member, hook, channel, label, args);
+
+		PonyCommandRegistry registry = this.manager.getRegistry();
+		PonyDiscordCommandExecutor executor = (PonyDiscordCommandExecutor) registry.getDiscordCommand(e.getName());
+
+		if (executor != null) {
+			PonyDiscordCommandInfo info = registry.getDiscordCommandInfo(executor);
+			if (info.hasAccess(e)) {
+				String result = executor.ponyExecute(command);
+				executor.afterExecute(command, result);
+			}
+			else {
+				executor.reject(command);
+			}
+		}
+		else {
+			e.getHook().deleteOriginal().queue();
+		}
 	}
 
 	private List<PonyGuildArg<?>> parseOptions(List<OptionMapping> options) {
