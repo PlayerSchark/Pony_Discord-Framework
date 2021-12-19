@@ -14,7 +14,7 @@ import java.util.List;
  * @author Player_Schark
  */
 @Getter
-public class PonyChatCommand extends PonyCommandBase<MessageReceivedEvent, PonyArg<String>> implements PonyCommand {
+public class PonyChatCommand extends PonyCommand<MessageReceivedEvent, PonyArg<String>> implements IPonyChatCommand {
 
 	private final Message message;
 

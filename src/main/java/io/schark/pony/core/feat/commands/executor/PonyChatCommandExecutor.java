@@ -1,7 +1,7 @@
 package io.schark.pony.core.feat.commands.executor;
 
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
-import io.schark.pony.core.feat.commands.command.PonyCommandBase;
+import io.schark.pony.core.feat.commands.command.PonyCommand;
 import io.schark.pony.core.feat.commands.command.PonyGuildCommand;
 import io.schark.pony.core.feat.commands.in.PonyArg;
 import lombok.Getter;
@@ -24,7 +24,7 @@ public abstract class PonyChatCommandExecutor extends PonyCommandExecutor {
 		this.guildCommand = publicCommand;
 	}
 
-	@Override public String ponyExecute(PonyCommandBase<? extends Event, ? extends PonyArg<?>> command) {
+	@Override public String ponyExecute(PonyCommand<? extends Event, ? extends PonyArg<?>> command) {
 		return switch (command) {
 			case PonyGuildCommand cmd -> this.executeCommand(cmd);
 			case PonyChatCommand cmd -> this.executeCommand(cmd);

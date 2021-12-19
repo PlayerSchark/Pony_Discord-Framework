@@ -33,6 +33,7 @@ import org.reflections.Reflections;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -89,9 +90,8 @@ public class PonyCommandRegistry {
 		catch (InterruptedException e) {
 			throw new CommandRegisterException(e);
 		}
-		List<Class> blackListed =Arrays.asList(PonyChatCommandExecutor.class, PonyGuildCommandExecutor.class);
 		for (Class<E> commandClass : commands) {
-			if (blackListed.contains(commandClass)) {
+			if (Modifier.isAbstract(commandClass.getModifiers())) {
 				continue;
 			}
 			try {

@@ -1,6 +1,6 @@
 package io.schark.pony.core.feat.commands.executor;
 
-import io.schark.pony.core.feat.commands.command.PonyCommandBase;
+import io.schark.pony.core.feat.commands.command.PonyCommand;
 import io.schark.pony.core.feat.commands.in.PonyArg;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,5 +16,5 @@ public abstract class PonyCommandExecutor implements PonyCommandExecutable {
 	private final String rawLabel;
 	private final String description;
 
-	@Override public abstract String ponyExecute(PonyCommandBase<? extends Event, ? extends PonyArg<?>> command);
+	@Override public abstract String ponyExecute(PonyCommand<? extends Event, ? extends PonyArg<?>> command);
 }
