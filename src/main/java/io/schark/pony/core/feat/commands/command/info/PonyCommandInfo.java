@@ -14,7 +14,7 @@ import net.dv8tion.jda.api.requests.RestAction;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Set;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * @author Player_Schark
@@ -41,16 +41,17 @@ public abstract class PonyCommandInfo<E extends PonyCommandExecutable> {
 	@Nullable private final String noGuildMessage;
 	@Nullable private final String noChannelMessage;
 
-	protected <Ev extends Event> void runNoAccess(Ev event, String noAccessMessage, BiFunction<Ev, String, RestAction> action, PonyRunnable runnable) {
+	protected <Ev extends Event> void runNoAccess(String noAccessMessage, Function<String, RestAction> action, PonyRunnable runnable) {
 		if (runnable != null) {
 			runnable.run();
 		}
 		if (noAccessMessage != null && !noAccessMessage.isEmpty()) {
-			action.apply(event, noAccessMessage).queue();
+			action.apply(noAccessMessage).queue();
 		}
 	}
 
-	@SuppressWarnings("BooleanMethodIsAlwaysInverted") <Ev extends Event> boolean hasAccess(Ev e, BiFunction<Ev, String, RestAction> noAccessFunction, User author, Member member,
+	@SuppressWarnings("BooleanMethodIsAlwaysInverted")
+	boolean hasAccess(Function<String, RestAction> noAccessFunction, User author, Member member,
 					MessageChannel channel) {
 		boolean blacklisted = this.isBlacklisted();
 		if (author.isBot() && blacklisted == this.isBotUsable()) {
@@ -68,7 +69,7 @@ public abstract class PonyCommandInfo<E extends PonyCommandExecutable> {
 				Set<Long> allowedGuilds = this.getAllowedGuilds();
 				boolean guildAccess = !allowedGuilds.isEmpty() && !allowedGuilds.contains(member.getGuild().getIdLong());
 				if (blacklisted != guildAccess) {
-					this.runNoAccess(e, this.getNoGuildMessage(), noAccessFunction, this.getNoGuild());
+					this.runNoAccess(this.getNoGuildMessage(), noAccessFunction, this.getNoGuild());
 					return false;
 				}
 
@@ -77,7 +78,7 @@ public abstract class PonyCommandInfo<E extends PonyCommandExecutable> {
 					asMember = true;
 				}
 				else {
-					this.runNoAccess(e, this.getNoRoleMessage(), noAccessFunction, this.getNoRole());
+					this.runNoAccess(this.getNoRoleMessage(), noAccessFunction, this.getNoRole());
 					//asMember = false <- variable already assigned;
 				}
 			}
@@ -90,28 +91,28 @@ public abstract class PonyCommandInfo<E extends PonyCommandExecutable> {
 		}
 
 		//user check
-		boolean asUser = this.hasUserAccess(e, noAccessFunction, this, author, asMember);
+		boolean asUser = this.hasUserAccess(noAccessFunction, this, author, asMember);
 
 		//channels
-		boolean asChannel = this.hasChannelAccess(e, noAccessFunction, this, channel, asUser);
+		boolean asChannel = this.hasChannelAccess(noAccessFunction, this, channel, asUser);
 		return asMember && asChannel && asUser;
 	}
 
-	private <Ev extends Event> boolean hasChannelAccess(Ev event, BiFunction<Ev, String, RestAction> noAccessFunction, PonyCommandInfo<E> commandInfo, MessageChannel channel, boolean runNoAccess) {
-		return this.hasIdAccess(event, noAccessFunction, channel.getIdLong(), commandInfo.getAllowedChannels(), commandInfo.getNoChannel(), commandInfo.getNoChannelMessage(), runNoAccess);
+	private boolean hasChannelAccess(Function<String, RestAction> noAccessFunction, PonyCommandInfo<E> commandInfo, MessageChannel channel, boolean runNoAccess) {
+		return this.hasIdAccess(noAccessFunction, channel.getIdLong(), commandInfo.getAllowedChannels(), commandInfo.getNoChannel(), commandInfo.getNoChannelMessage(), runNoAccess);
 	}
 
-	private <Ev extends Event> boolean hasUserAccess(Ev event, BiFunction<Ev, String, RestAction> noAccessFunction, PonyCommandInfo<E> commandInfo, User author, boolean runNoAccess) {
-		return this.hasIdAccess(event, noAccessFunction, author.getIdLong(), commandInfo.getAllowedUsers(), commandInfo.getNoUser(), commandInfo.getNoUserMessage(), runNoAccess);
+	private boolean hasUserAccess(Function<String, RestAction> noAccessFunction, PonyCommandInfo<E> commandInfo, User author, boolean runNoAccess) {
+		return this.hasIdAccess(noAccessFunction, author.getIdLong(), commandInfo.getAllowedUsers(), commandInfo.getNoUser(), commandInfo.getNoUserMessage(), runNoAccess);
 	}
 
-	private <Ev extends Event> boolean hasIdAccess(Ev event, BiFunction<Ev, String, RestAction> noAccessFunction, Long id, Set<Long> allowedUsers,
+	private boolean hasIdAccess(Function<String, RestAction> noAccessFunction, Long id, Set<Long> allowedUsers,
 					@Nullable PonyRunnable ponyRunnable, @Nullable String message, boolean runNoAccess) {
 		boolean as = allowedUsers.isEmpty() || allowedUsers.contains(id);
 		as = this.blacklisted != as;
 
 		if (!as && runNoAccess) {
-			this.runNoAccess(event, message, noAccessFunction, ponyRunnable);
+			this.runNoAccess(message, noAccessFunction, ponyRunnable);
 		}
 
 		return as;

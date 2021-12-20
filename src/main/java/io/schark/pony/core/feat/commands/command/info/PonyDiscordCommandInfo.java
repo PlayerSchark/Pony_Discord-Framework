@@ -2,12 +2,11 @@ package io.schark.pony.core.feat.commands.command.info;
 
 import io.schark.pony.core.feat.commands.annotation.impl.PonyRunnable;
 import io.schark.pony.core.feat.commands.executor.PonyDiscordCommandExecutable;
-import net.dv8tion.jda.api.events.Event;
 import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.requests.RestAction;
 
 import java.util.Set;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * @author Player_Schark
@@ -43,7 +42,7 @@ public class PonyDiscordCommandInfo<E extends PonyDiscordCommandExecutable> exte
 	}
 
 	public boolean hasAccess(SlashCommandEvent e) {
-		BiFunction<Event, String, RestAction> noAccessFunction = (ev, msg) -> e.getChannel().sendMessage(msg);
-		return super.hasAccess(e, noAccessFunction, e.getUser(), e.getMember(), e.getChannel());
+		Function<String, RestAction> noAccessFunction = msg -> e.getChannel().sendMessage(msg);
+		return super.hasAccess(noAccessFunction, e.getUser(), e.getMember(), e.getChannel());
 	}
 }
