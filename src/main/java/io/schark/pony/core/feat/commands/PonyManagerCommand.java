@@ -21,7 +21,6 @@ public class PonyManagerCommand extends PonyManager {
 	private final PonyCommandRegistry registry = new PonyCommandRegistry();
 
 	@Override public void init() {
-
 		try {
 			this.registerCommands();
 

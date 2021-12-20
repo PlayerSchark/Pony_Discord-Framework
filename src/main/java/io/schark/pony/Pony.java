@@ -1,11 +1,16 @@
 package io.schark.pony;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import io.schark.pony.core.PonyBot;
 import io.schark.pony.core.PonyConfig;
 import io.schark.pony.core.PonyManager;
 import io.schark.pony.core.PonyManagerType;
 import io.schark.pony.exception.PonyStartException;
 import io.schark.pony.utils.PonyUtils;
+import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
 import org.jetbrains.annotations.NotNull;
 
@@ -22,6 +27,7 @@ public class Pony {
 	private static Pony INSTANCE;
 	private PonyConfig config;
 	private PonyBot ponyBot;
+	@Getter private AudioPlayerManager audioPlayerManager;
 	private List<PonyManagerType> managers = new ArrayList<>();
 
 	public static Pony getInstance() {
@@ -32,7 +38,6 @@ public class Pony {
 		Pony.INSTANCE = new Pony();
 		Pony.INSTANCE.start(args);
 		Pony.INSTANCE.getPonyBot().afterStart();
-
 		Runtime.getRuntime().addShutdownHook(Pony.INSTANCE.shutdownPony());
 	}
 
@@ -60,6 +65,9 @@ public class Pony {
 		System.out.println("Building JDA");
 		JDA jda = this.ponyBot.build();
 		jda.awaitReady();
+
+		audioPlayerManager = new DefaultAudioPlayerManager();
+		AudioSourceManagers.registerRemoteSources(audioPlayerManager);
 	}
 
 	private void injectJdaToManager() {
