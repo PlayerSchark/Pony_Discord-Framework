@@ -5,9 +5,9 @@ import net.dv8tion.jda.api.JDA;
 /**
  * @author Player_Schark
  */
-public class PonyLabel extends PonyArg {
+public class PonyChatLabel extends PonyChatArg {
 
-	public PonyLabel(JDA jda, String contentRaw) {
+	public PonyChatLabel(JDA jda, String contentRaw) {
 		super(jda, contentRaw);
 	}
 }

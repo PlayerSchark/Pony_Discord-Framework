@@ -1,4 +1,4 @@
-package io.schark.pony.core.feat.commands.annotation;
+package io.schark.pony.core.feat.commands.annotation.options;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -10,6 +10,5 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.CONSTRUCTOR)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface SlashCommand {
-
+public @interface Blacklisted {
 }

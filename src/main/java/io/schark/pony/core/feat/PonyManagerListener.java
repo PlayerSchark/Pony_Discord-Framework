@@ -1,7 +1,6 @@
 package io.schark.pony.core.feat;
 
 import io.schark.pony.core.PonyManager;
-import io.schark.pony.core.feat.commands.listener.PonyCommandListener;
 import lombok.Getter;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -20,8 +19,8 @@ public class PonyManagerListener extends PonyManager {
 		//noting to do here
 	}
 
-	public void registerListener(PonyCommandListener ponyCommandListener) {
-		this.listeners.add(ponyCommandListener);
+	public void registerListener(ListenerAdapter listener) {
+		this.listeners.add(listener);
 	}
 
 	public ListenerAdapter[] getRegisterableListeners() {

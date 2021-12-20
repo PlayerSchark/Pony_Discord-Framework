@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -40,5 +41,28 @@ public class PonyUtils {
 		Field f = clazz.getDeclaredField(field);
 		f.setAccessible(true);
 		f.set(object, value);
+	}
+
+	public static <T> T awaitNonNull(Supplier<T> getter) {
+		while (getter.get() == null) {
+			try {
+				Thread.sleep(10);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		return getter.get();
+	}
+
+	public static void await(Supplier<Boolean> isTrue) {
+		while (!isTrue.get()) {
+			try {
+				Thread.sleep(25L);
+			}
+			catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }
