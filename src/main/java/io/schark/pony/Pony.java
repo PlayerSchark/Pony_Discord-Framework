@@ -31,7 +31,7 @@ public final class Pony {
 	private final static Pony INSTANCE = new Pony();
 	private PonyConfig config;
 	private PonyBot ponyBot;
-	private List<PonyManagerType> managers = new ArrayList<>();
+	private List<PonyManagerType<? extends PonyManager>> managers = new ArrayList<>();
 	private boolean notReady = true;
 	private PonyInjector injector;
 
@@ -47,7 +47,8 @@ public final class Pony {
 
 	public void awaitReady() throws InterruptedException {
 		while (this.notReady) {
-				Thread.sleep(10);
+			//noinspection BusyWait
+			Thread.sleep(10);
 		}
 	}
 
@@ -104,7 +105,7 @@ public final class Pony {
 
 	private List<PonyManager> getManagers() {
 		List<PonyManager> managers = new ArrayList<>();
-		for (PonyManagerType manager : this.managers) {
+		for (PonyManagerType<?> manager : this.managers) {
 			managers.add(manager.getManager());
 		}
 		return managers;
@@ -122,7 +123,7 @@ public final class Pony {
 		this.initManager(PonyManagerType.AUDIO);
 	}
 
-	private void initManager(PonyManagerType type) {
+	private <M extends PonyManager> void initManager(PonyManagerType<M> type) {
 		PonyManager manager = type.getManager();
 		this.managers.add(type);
 		manager.init();
