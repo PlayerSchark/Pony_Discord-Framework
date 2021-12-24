@@ -123,6 +123,7 @@ public final class Pony {
 		System.out.println("Initialize Managers");
 		this.initManager(PonyManagerType.LISTENER);
 		this.initManager(PonyManagerType.COMMAND);
+		this.initManager(PonyManagerType.AUDIO);
 	}
 
 	private void initManager(PonyManagerType type) {

@@ -33,9 +33,13 @@ public abstract class PonyBot {
 		JDABuilder builder = JDABuilder.create(this.token,
 						GatewayIntent.GUILD_MEMBERS,
 						GatewayIntent.GUILD_WEBHOOKS,
-						GatewayIntent.GUILD_MESSAGES);
+						GatewayIntent.GUILD_MESSAGES,
+						GatewayIntent.GUILD_VOICE_STATES,
+						GatewayIntent.GUILD_EMOJIS,
+						GatewayIntent.GUILD_EMOJIS);
 
-		builder.disableCache(CacheFlag.MEMBER_OVERRIDES, CacheFlag.VOICE_STATE);
+		builder.disableCache(CacheFlag.MEMBER_OVERRIDES);
+		builder.enableCache(CacheFlag.VOICE_STATE);
 		builder.setBulkDeleteSplittingEnabled(false);
 		builder.setCompression(Compression.NONE);
 		builder.setActivity(this.getActivity());

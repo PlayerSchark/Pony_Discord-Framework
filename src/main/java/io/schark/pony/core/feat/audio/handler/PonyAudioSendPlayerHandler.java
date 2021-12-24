@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import java.nio.ByteBuffer;
 
 @RequiredArgsConstructor
-public class AudioSendPlayerHandler implements AudioSendHandler {
+public class PonyAudioSendPlayerHandler implements AudioSendHandler {
 
     private final AudioPlayer audioPlayer;
     private AudioFrame lastFrame;
@@ -24,5 +24,9 @@ public class AudioSendPlayerHandler implements AudioSendHandler {
     @Override
     public ByteBuffer provide20MsAudio() {
         return ByteBuffer.wrap(lastFrame.getData());
+    }
+
+    public boolean isOpus() {
+        return true;
     }
 }
