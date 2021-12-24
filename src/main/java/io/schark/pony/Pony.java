@@ -31,7 +31,6 @@ public final class Pony {
 	private final static Pony INSTANCE = new Pony();
 	private PonyConfig config;
 	private PonyBot ponyBot;
-	@Getter private AudioPlayerManager audioPlayerManager;
 	private List<PonyManagerType> managers = new ArrayList<>();
 	private boolean notReady = true;
 	private PonyInjector injector;
@@ -91,9 +90,6 @@ public final class Pony {
 		builder.setEnableShutdownHook(false);
 		JDA jda = builder.build();
 		jda.awaitReady();
-
-		audioPlayerManager = new DefaultAudioPlayerManager();
-		AudioSourceManagers.registerRemoteSources(audioPlayerManager);
 
 		this.injector.injectJda(jda);
 		return jda;
