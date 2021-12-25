@@ -66,6 +66,9 @@ public class PonyAudioGuildController {
     }
 
     public void voiceTimeout() {
+        if (this.timeout[0] == -1) {
+            return;
+        }
         new Thread(() -> {
             for (;this.timeout[0] > 0; this.timeout[0]--) {
                  if (this.channel.getMembers().size() > 1) {
@@ -73,6 +76,8 @@ public class PonyAudioGuildController {
                  }
             }
             this.guildManager.closeAudioConnection();
+            this.channel = null;
+            this.timeout = new long[0];
         }).start();
     }
 

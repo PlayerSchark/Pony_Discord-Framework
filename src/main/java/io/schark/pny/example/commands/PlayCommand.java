@@ -23,7 +23,7 @@ public class PlayCommand extends PonyChatCommandExecutor {
         PonyAudioGuildController controller = PonyAudioGuildController.create(guild);
 
         controller.joinVoice(channel, search -> search.searchYoutube(command.getArgument(0), new AudioResult())
-                , 3_000);
+                , 3_000); // timeout = 0 no delay | timeout = -1 no leave
         return "has start";
     }
 }
