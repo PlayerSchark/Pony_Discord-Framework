@@ -18,7 +18,7 @@ public class PonySearchQuarry {
         if (!content.startsWith("http://") && !content.startsWith("https://")) {
             throw new MusicSearchURLException("The Argument start no with 'http(s)://'");
         }
-        if (!PonyManagerType.AUDIO.getManager().getYoutubeRegex().matcher(content).find()) {
+        if (!PonyManagerType.AUDIO.manager().getYoutubeRegex().matcher(content).find()) {
             throw new MusicSearchURLException("The Argument is no Youtube URL");
         }
         String url = "ytsearch:" + content;

@@ -29,20 +29,20 @@ public class VoiceLeaveListener extends ListenerAdapter {
 
     @Override
     public void onGuildVoiceJoin(@Nonnull GuildVoiceJoinEvent e) {
-        if (e.getMember().getIdLong() == Pony.getInstance().getPonyBot().getId() || e.getMember().getIdLong() == testBotID) {
+        if (e.getMember().getIdLong() == Pony.getInstance().getPonyBot().getId() || e.getMember().getIdLong() == this.testBotID) {
             if (e.getNewValue().getMembers().size() == 1) {
-                PonyAudioGuildController controller = PonyManagerType.AUDIO.getManager().getController(e.getMember().getGuild());
+                PonyAudioGuildController controller = PonyManagerType.AUDIO.manager().getController(e.getMember().getGuild());
                 controller.voiceTimeout();
             }
         }
     }
 
     private void checkBotLeave(Member leftMember, List<Member> members) {
-        if (leftMember.getIdLong() == Pony.getInstance().getPonyBot().getId() || leftMember.getIdLong() == testBotID) {
+        if (leftMember.getIdLong() == Pony.getInstance().getPonyBot().getId() || leftMember.getIdLong() == this.testBotID) {
             return;
         }
         if (members.size() == 1) {
-            PonyAudioGuildController controller = PonyManagerType.AUDIO.getManager().getController(leftMember.getGuild());
+            PonyAudioGuildController controller = PonyManagerType.AUDIO.manager().getController(leftMember.getGuild());
             controller.voiceTimeout();
         }
     }

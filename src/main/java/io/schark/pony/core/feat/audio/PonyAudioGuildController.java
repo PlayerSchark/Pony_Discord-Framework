@@ -2,13 +2,11 @@ package io.schark.pony.core.feat.audio;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import io.schark.pony.core.PonyManagerType;
 import io.schark.pony.core.feat.audio.handler.PonyAudioSendPlayerHandler;
 import io.schark.pony.exception.JoinVoiceFailedException;
 import lombok.Getter;
-import net.dv8tion.jda.api.audio.SpeakingMode;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Member;
@@ -33,11 +31,11 @@ public class PonyAudioGuildController {
         this.audioPlayerManager = audioPlayerManager;
         this.player = audioPlayerManager.createPlayer();
         this.guildManager = this.guild.getAudioManager();
-        this.guildManager.setSendingHandler(new PonyAudioSendPlayerHandler(player));
+        this.guildManager.setSendingHandler(new PonyAudioSendPlayerHandler(this.player));
     }
 
     public static PonyAudioGuildController create(Guild guild) {
-        return PonyManagerType.AUDIO.getManager().createGuildAudio(guild);
+        return PonyManagerType.AUDIO.manager().createGuildAudio(guild);
     }
 
     public void joinVoice(Member member, Consumer<PonySearchQuarry> consumer) {
@@ -78,7 +76,7 @@ public class PonyAudioGuildController {
         }
         this.guildManager.openAudioConnection(channel);
         this.channel = channel;
-        this.timeout[0] = timeout[1];
+        this.timeout[0] = this.timeout[1];
         if (consumer != null) {
             PonySearchQuarry quarry = new PonySearchQuarry(this.audioPlayerManager);
             consumer.accept(quarry);

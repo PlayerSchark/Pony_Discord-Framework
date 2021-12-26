@@ -4,7 +4,7 @@ import io.schark.pny.example.AudioResult;
 import io.schark.pony.core.feat.audio.PonyAudioGuildController;
 import io.schark.pony.core.feat.commands.annotation.Alias;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
-import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutor;
+import io.schark.pony.core.feat.commands.executor.input.PonyChatCommandExecutor;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.VoiceChannel;
 

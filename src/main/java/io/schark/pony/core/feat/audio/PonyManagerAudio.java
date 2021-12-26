@@ -24,15 +24,15 @@ public class PonyManagerAudio extends PonyManager {
     public void init() {
         this.audioGuildList = new HashMap<>();
         this.audioPlayerManager = new DefaultAudioPlayerManager();
-        AudioSourceManagers.registerRemoteSources(audioPlayerManager);
-        PonyManagerType.LISTENER.getManager().registerListener(new VoiceLeaveListener());
+        AudioSourceManagers.registerRemoteSources(this.audioPlayerManager);
+        PonyManagerType.LISTENER.manager().registerListener(new VoiceLeaveListener());
     }
 
     public PonyAudioGuildController createGuildAudio(Guild guild)  {
         if (this.audioGuildList.containsKey(guild)) {
             return this.audioGuildList.get(guild);
         }
-        PonyAudioGuildController controller = new PonyAudioGuildController(guild, audioPlayerManager);
+        PonyAudioGuildController controller = new PonyAudioGuildController(guild, this.audioPlayerManager);
         this.audioGuildList.put(guild, controller);
         return controller;
     }
