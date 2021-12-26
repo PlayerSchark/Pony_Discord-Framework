@@ -1,9 +1,18 @@
 package io.schark.pony;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
+import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
+import io.schark.pony.core.PonyBot;
+import io.schark.pony.core.PonyConfig;
+import io.schark.pony.core.PonyManager;
+import io.schark.pony.core.PonyManagerType;
 import io.schark.pony.core.*;
 import io.schark.pony.core.feat.PonyManagerListener;
 import io.schark.pony.exception.PonyStartException;
 import io.schark.pony.utils.PonyUtils;
+import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +31,7 @@ public final class Pony {
 	private final static Pony INSTANCE = new Pony();
 	private PonyConfig config;
 	private PonyBot ponyBot;
-	private List<PonyManagerType> managers = new ArrayList<>();
+	private List<PonyManagerType<? extends PonyManager>> managers = new ArrayList<>();
 	private boolean notReady = true;
 	private PonyInjector injector;
 
@@ -38,7 +47,8 @@ public final class Pony {
 
 	public void awaitReady() throws InterruptedException {
 		while (this.notReady) {
-				Thread.sleep(10);
+			//noinspection BusyWait
+			Thread.sleep(10);
 		}
 	}
 
@@ -81,6 +91,7 @@ public final class Pony {
 		builder.setEnableShutdownHook(false);
 		JDA jda = builder.build();
 		jda.awaitReady();
+
 		this.injector.injectJda(jda);
 		return jda;
 	}
@@ -94,7 +105,7 @@ public final class Pony {
 
 	private List<PonyManager> getManagers() {
 		List<PonyManager> managers = new ArrayList<>();
-		for (PonyManagerType manager : this.managers) {
+		for (PonyManagerType<?> manager : this.managers) {
 			managers.add(manager.manager());
 		}
 		return managers;
@@ -109,9 +120,11 @@ public final class Pony {
 		System.out.println("Initialize Managers");
 		this.initManager(PonyManagerType.LISTENER);
 		this.initManager(PonyManagerType.COMMAND);
+		this.initManager(PonyManagerType.AUDIO);
 	}
 
-	private void initManager(PonyManagerType type) {
+
+	private <M extends PonyManager> void initManager(PonyManagerType<M> type) {
 		PonyManager manager = type.manager();
 		this.managers.add(type);
 		manager.init();

@@ -24,7 +24,6 @@ public class PonyManagerCommand extends PonyManager {
 	private String prefix;
 
 	@Override public void init() {
-
 		try {
 			this.prefix = Pony.getInstance().getConfig().getPrefix();
 			this.registerCommands();
