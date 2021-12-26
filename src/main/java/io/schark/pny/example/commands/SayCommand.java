@@ -3,11 +3,9 @@ package io.schark.pny.example.commands;
 import com.google.common.base.Joiner;
 import io.schark.pony.core.feat.commands.annotation.Alias;
 import io.schark.pony.core.feat.commands.annotation.access.AllowedChannels;
-import io.schark.pony.core.feat.commands.annotation.access.AllowedGuilds;
-import io.schark.pony.core.feat.commands.annotation.access.AllowedRoles;
 import io.schark.pony.core.feat.commands.annotation.access.AllowedUsers;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
-import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutor;
+import io.schark.pony.core.feat.commands.executor.input.PonyChatCommandExecutor;
 
 import java.util.List;
 
@@ -18,9 +16,7 @@ public class SayCommand extends PonyChatCommandExecutor {
 
 	@Alias(aliases = { "tell", "announce", "sai" })
 	@AllowedUsers(ids = 276812593463820289L, noAccessMessage = "sorry you are blocked")
-	@AllowedRoles(ids = 0, noAccessMessage = "oops")
 	@AllowedChannels(ids = 847434700708642826L, noAccessMessage = "you are in channel")
-	@AllowedGuilds(ids = 0)
 	//@AllowedRoles(ids = 15L)
 	public SayCommand() {
 		super("say", "wiederholt alles was du schreibst :)", true);

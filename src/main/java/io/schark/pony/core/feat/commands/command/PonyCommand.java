@@ -27,7 +27,7 @@ public abstract class PonyCommand<E extends Event, A extends PonyArg<?>> impleme
 	private final PonyChatLabel label;
 	private final List<A> arguments;
 
-	public IMentionable getFirstMentionedOrSender() {
+	@Override public IMentionable getFirstMentionedOrSender() {
 		for (A arg : this.arguments) {
 			if (arg.hasMention()) {
 				List<IMentionable> list = arg.toMentions();
@@ -40,7 +40,7 @@ public abstract class PonyCommand<E extends Event, A extends PonyArg<?>> impleme
 		return this.sender;
 	}
 
-	public <T> PonyArg<T> getArgument(int i) {
+	@Override public <T> PonyArg<T> getArgument(int i) {
 		//noinspection unchecked
 		return (PonyArg<T>) this.getArguments().get(i);
 	}
@@ -49,7 +49,7 @@ public abstract class PonyCommand<E extends Event, A extends PonyArg<?>> impleme
 		return this.getArgument(i).getAsString();
 	}
 
-	public List<? extends PonyArg<String>> getStringArguments() {
+	@Override public List<? extends PonyArg<String>> getStringArguments() {
 		List<PonyArg<String>> result = new ArrayList<>();
 		for (A argument : this.arguments) {
 			result.add(argument.getAsString());
@@ -57,7 +57,7 @@ public abstract class PonyCommand<E extends Event, A extends PonyArg<?>> impleme
 		return Collections.unmodifiableList(result);
 	}
 
-	public List<String> getRawArguments() {
+	@Override public List<String> getRawArguments() {
 		List<String> result = new ArrayList<>();
 		for (A argument : this.arguments) {
 			result.add(argument.getContentAsString());

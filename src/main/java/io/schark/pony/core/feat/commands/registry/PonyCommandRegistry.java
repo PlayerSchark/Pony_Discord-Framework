@@ -1,7 +1,5 @@
 package io.schark.pony.core.feat.commands.registry;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Sets;
 import io.schark.pony.Pony;
 import io.schark.pony.core.PonyBot;
@@ -13,11 +11,17 @@ import io.schark.pony.core.feat.commands.annotation.access.AllowedUsers;
 import io.schark.pony.core.feat.commands.annotation.impl.PonyAccessor;
 import io.schark.pony.core.feat.commands.annotation.impl.PonyRunnable;
 import io.schark.pony.core.feat.commands.annotation.options.*;
-import io.schark.pony.core.feat.commands.command.info.*;
-import io.schark.pony.core.feat.commands.executor.*;
+import io.schark.pony.core.feat.commands.executor.PonyCommandExecutable;
+import io.schark.pony.core.feat.commands.executor.PonyCommandExecutor;
+import io.schark.pony.core.feat.commands.executor.input.*;
 import io.schark.pony.core.feat.commands.in.PonyChatLabel;
+import io.schark.pony.core.feat.commands.registry.info.*;
 import io.schark.pony.core.feat.commands.registry.label.*;
+import io.schark.pony.core.feat.commands.registry.wrapper.PonyAccessWrapper;
+import io.schark.pony.core.feat.commands.registry.wrapper.PonyAnnotationWrapper;
+import io.schark.pony.core.feat.commands.registry.wrapper.WrapperType;
 import io.schark.pony.exception.CommandRegisterException;
+import io.schark.pony.utils.PonyMulti;
 import io.schark.pony.utils.PonyUtils;
 import lombok.Getter;
 import net.dv8tion.jda.api.entities.Guild;
@@ -42,10 +46,10 @@ import java.util.function.Supplier;
 @Getter
 public class PonyCommandRegistry {
 
+	private static final Class<PonyAccessor> PONY_ACCESSOR_CLASS = PonyAccessor.class;
 	private volatile PonyBot bot;
 	private volatile boolean noCommands;
-	private volatile BiMap<ChatRegistryEntry, PonyChatCommandExecutable> chatCommands = HashBiMap.create();
-	private volatile BiMap<DiscordRegistryEntry, PonyDiscordCommandExecutable> discordCommands = HashBiMap.create();
+	private volatile PonyMulti<PonyRegistryEntry, PonyCommandExecutable> commands = new PonyMulti<>();
 	private volatile boolean isShutdown = false;
 	private volatile boolean isShuttingDown;
 
@@ -96,7 +100,7 @@ public class PonyCommandRegistry {
 			try {
 				System.out.println("Starting registering executor '" + commandClass.getSimpleName() + "'");
 				Constructor<E> constructor = commandClass.getConstructor();
-				RegistryEntry<E, I> registry = this.reflectAnnotations(constructor, commandClass);
+				PonyRegistryEntry<E, I> registry = this.reflectAnnotations(constructor, commandClass);
 				this.put(registry);
 
 				new Thread(() -> this.registerDiscordCommand(registry)).start();
@@ -108,19 +112,19 @@ public class PonyCommandRegistry {
 		}
 	}
 
-	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> void registerDiscordCommand(RegistryEntry<E, I> entry) {
-		if (entry instanceof DiscordRegistryEntry discordLabel) {
+	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> void registerDiscordCommand(PonyRegistryEntry<E, I> entry) {
+		if (entry instanceof PonyDiscordRegistryEntry discordLabel) {
 			System.out.println("DiscordCommands: Registering " + discordLabel.getRawLabel());
 			E executor = entry.getCommandInfo().getExecutable();
 			switch (entry) {
-			case GuildRegistryEntry lbl -> this.registerGuildCommand(lbl, ((PonyGuildCommandExecutable) executor));
-			case SlashRegistryEntry ignore -> this.registerSlashCommand(((PonySlashCommandExecutable) executor));
+			case PonyGuildRegistryEntry lbl -> this.registerGuildCommand(lbl, ((PonyGuildCommandExecutable) executor));
+			case PonySlashRegistryEntry ignore -> this.registerSlashCommand(((PonySlashCommandExecutable) executor));
 			default -> throw new IllegalStateException("Unexpected value: " + entry);
 			}
 		}
 	}
 
-	private <E extends PonyGuildCommandExecutable> void registerGuildCommand(GuildRegistryEntry label, E executor) {
+	private <E extends PonyGuildCommandExecutable> void registerGuildCommand(PonyGuildRegistryEntry label, E executor) {
 		for (Long guildId : label.getGuildIds()) {
 			this.registerGuildCommand(executor, guildId);
 		}
@@ -152,21 +156,11 @@ public class PonyCommandRegistry {
 		action.addCommands(commandData);
 	}
 
-	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> void put(RegistryEntry<E, I> entry) {
-		switch (entry) {
-		case ChatRegistryEntry regEnt -> {
-			this.chatCommands.put(regEnt, regEnt.getCommandInfo().getExecutable());
-			System.out.println("Command " + regEnt.getRawLabel() + " registered to chat.");
-		}
-		case DiscordRegistryEntry regEnt -> {
-			this.discordCommands.put(regEnt, regEnt.getCommandInfo().getExecutable());
-			System.out.println("Command " + regEnt.getRawLabel() + " registered to guilds.");
-		}
-		default -> throw new IllegalStateException("Unexpected value: " + entry.getCommandInfo().getExecutable());
-		}
+	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> void put(PonyRegistryEntry<E, I> entry) {
+		this.commands.put(entry, entry.getCommandInfo().getExecutable());
 	}
 
-	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> RegistryEntry<E, I> reflectAnnotations(Constructor<E> constructor, Class<E> commandClass) {
+	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> PonyRegistryEntry<E, I> reflectAnnotations(Constructor<E> constructor, Class<E> commandClass) {
 		E command = this.executorInstance(commandClass);
 		PonyCommandInfo<E> commandInfo = this.generateInfo(constructor, command);
 		Set<String> aliases = this.assignAnnotation(constructor, Alias.class, anno -> Arrays.asList(anno.aliases()));
@@ -174,72 +168,73 @@ public class PonyCommandRegistry {
 		return this.commandInstance(command, aliases, commandInfo);
 	}
 
+	private <A extends Annotation, E extends PonyCommandExecutable> PonyAccessWrapper<A> getWrapper(Class<A> annoClass, Constructor<E> constructor, PonyCommandExecutable command) {
+		Set<Long> accessIds = this.assignAnnotation(constructor, annoClass, anno -> this.accessorIdsFromAnno(command, anno));
+		PonyRunnable noAccess = this.solveAnnotation(constructor, annoClass, anno -> this.instanceFunction(PonyUtils.invokeClass(anno, "noAccessFunction", PonyRunnable.class)));
+		String noAccessMessage = this.solveAnnotation(constructor, annoClass, a -> PonyUtils.invoke(a, "noAccessMessage", String.class));
+
+		return new PonyAccessWrapper<>(annoClass, accessIds, noAccess, noAccessMessage);
+	}
+
+	@NotNull private <A extends Annotation> Set<Long> accessorIdsFromAnno(PonyCommandExecutable command, A anno) {
+		Class<? extends PonyAccessor> accessor = PonyUtils.invokeClass(anno, "accessor", PonyCommandRegistry.PONY_ACCESSOR_CLASS);
+		long[] ids = PonyUtils.invoke(anno, "ids", long[].class);
+		return this.idsFromAcessor(command, accessor, ids);
+	}
+
 	private <E extends PonyCommandExecutable> PonyCommandInfo<E> generateInfo(Constructor<E> constructor, PonyCommandExecutable command) {
 		//TODO: Many To Object
-		Class<AllowedRoles> rolesClass = AllowedRoles.class;
-		Class<AllowedUsers> usersClass = AllowedUsers.class;
-		Class<AllowedGuilds> guildsClass = AllowedGuilds.class;
-		Class<AllowedChannels> channelsClass = AllowedChannels.class;
-
-		//TODO: Many To Object
-		Set<Long> roles = this.assignAnnotation(constructor, rolesClass, anno -> this.idsFromAcessor(command, anno, AllowedRoles::accessor, a -> PonyUtils.toUpperLong(a.ids())));
-		Set<Long> users = this.assignAnnotation(constructor, usersClass, anno -> this.idsFromAcessor(command, anno, AllowedUsers::accessor, a -> PonyUtils.toUpperLong(a.ids())));
-		Set<Long> guilds = this.assignAnnotation(constructor, guildsClass, anno -> this.idsFromAcessor(command, anno, AllowedGuilds::accessor, a -> PonyUtils.toUpperLong(a.ids())));
-		Set<Long> channels = this.assignAnnotation(constructor, channelsClass, anno -> this.idsFromAcessor(command, anno, AllowedChannels::accessor, a -> PonyUtils.toUpperLong(a.ids())));
+		PonyAccessWrapper<AllowedRoles> rolesWrapper = this.getWrapper(AllowedRoles.class, constructor, command);
+		PonyAccessWrapper<AllowedUsers> usersWrapper = this.getWrapper(AllowedUsers.class, constructor, command);
+		PonyAccessWrapper<AllowedGuilds> guildsWrapper = this.getWrapper(AllowedGuilds.class, constructor, command);
+		PonyAccessWrapper<AllowedChannels> channelsWrapper = this.getWrapper(AllowedChannels.class, constructor, command);
 
 		boolean botUsable = constructor.isAnnotationPresent(BotUsable.class);
 		boolean sendTyping = constructor.isAnnotationPresent(SendTyping.class);
 		boolean isCaseSensitive = constructor.isAnnotationPresent(CaseSensitive.class);
 		boolean blacklisted = constructor.isAnnotationPresent(Blacklisted.class);
 
-		//TODO: Many To Object
-		PonyRunnable noRole = this.solveAnnotation(constructor, rolesClass, anno -> this.instanceFunction(anno.noAccessFunction()));
-		PonyRunnable noUser = this.solveAnnotation(constructor, usersClass, anno -> this.instanceFunction(anno.noAccessFunction()));
-		PonyRunnable noGuild = this.solveAnnotation(constructor, guildsClass, anno->this.instanceFunction(anno.noAccessFunction()));
-		PonyRunnable noChannel = this.solveAnnotation(constructor, channelsClass, anno->this.instanceFunction(anno.noAccessFunction()));
-
-
-		//TODO: Many To Object
-		String noRoleMessage = this.solveAnnotation(constructor, rolesClass, AllowedRoles::noAccessMessage);
-		String noUserMessage = this.solveAnnotation(constructor, usersClass, AllowedUsers::noAccessMessage);
-		String noGuildMessage = this.solveAnnotation(constructor, guildsClass, AllowedGuilds::noAccessMessage);
-		String noChannelMessage = this.solveAnnotation(constructor, channelsClass, AllowedChannels::noAccessMessage);
-
 		PonyCommandInfo createdInfo;
+		PonyAnnotationWrapper wrapper = new PonyAnnotationWrapper(rolesWrapper, usersWrapper, guildsWrapper, channelsWrapper);
 
 		if (command instanceof PonyDiscordCommandExecutable discordExecutable) {
-			boolean sendThinking = constructor.isAnnotationPresent(SendThinking.class);
-			boolean isEphemeral = constructor.isAnnotationPresent(Ephemeral.class);
-			if (discordExecutable instanceof PonyGuildCommandExecutable executable) { //isGuildCommand
-				guilds = this.idsFromAcessor(command, executable, PonyGuildCommandExecutable::accessor, ex -> PonyUtils.toUpperLong(ex.guildIds()));
-				createdInfo = new PonyGuildCommandInfo(executable, roles, users, guilds, channels,
-								botUsable, isCaseSensitive, blacklisted, sendThinking, isEphemeral,
-								noRole, noUser, noGuild, noChannel,
-								noRoleMessage, noUserMessage, noGuildMessage, noChannelMessage);
-			}
-			else if (discordExecutable instanceof PonySlashCommandExecutable executable) { //isSlashCommand
-				guilds = this.getBot().getGuildIds();
-				createdInfo = new PonySlashCommandInfo(executable, roles, users, guilds, channels,
-								botUsable, isCaseSensitive, blacklisted, sendThinking, isEphemeral,
-								noRole, noUser, noGuild, noChannel,
-								noRoleMessage, noUserMessage, noGuildMessage, noChannelMessage);
-			}
-			else {
-				throw new IllegalStateException("Unexpected instance " + discordExecutable.getClass().getSimpleName());
-			}
+			createdInfo = this.getPonyDiscordCommandInfo(constructor, command, guildsWrapper, botUsable, isCaseSensitive, blacklisted, wrapper, discordExecutable);
 		}
 		else if (command instanceof PonyChatCommandExecutable executable) {
-			createdInfo = new PonyChatCommandInfo(executable, roles, users, guilds, channels,
-							botUsable, sendTyping, isCaseSensitive, blacklisted,
-							noRole, noUser, noGuild, noChannel,
-							noRoleMessage, noUserMessage, noGuildMessage, noChannelMessage);
+			createdInfo = new PonyChatCommandInfo(executable, wrapper, botUsable, sendTyping, isCaseSensitive, blacklisted);
 		}
 		else {
-			throw new IllegalStateException("Unexpected instance " + command.getClass().getSimpleName());
+			throw new IllegalStateException("Unexpected instance " + command.getClass().getName());
 		}
 
 		//noinspection unchecked
 		return createdInfo;
+	}
+
+	@NotNull private <E extends PonyCommandExecutable> PonyCommandInfo getPonyDiscordCommandInfo(Constructor<E> constructor, PonyCommandExecutable command,
+					PonyAccessWrapper<AllowedGuilds> guildsWrapper,
+					boolean botUsable, boolean isCaseSensitive, boolean blacklisted, PonyAnnotationWrapper wrapper, PonyDiscordCommandExecutable discordExecutable) {
+		PonyCommandInfo createdInfo;
+		boolean sendThinking = constructor.isAnnotationPresent(SendThinking.class);
+		boolean isEphemeral = constructor.isAnnotationPresent(Ephemeral.class);
+		if (discordExecutable instanceof PonyGuildCommandExecutable executable) { //isGuildCommand
+			Set<Long> guilds = this.idsFromAcessor(command, executable.accessor(), executable.guildIds());
+			this.changeGuildAccess(guildsWrapper, wrapper, guilds);
+			createdInfo = new PonyGuildCommandInfo(executable, wrapper, botUsable, isCaseSensitive, blacklisted, sendThinking, isEphemeral);
+		}
+		else if (discordExecutable instanceof PonySlashCommandExecutable executable) { //isSlashCommand
+			this.changeGuildAccess(guildsWrapper, wrapper, this.getBot().getGuildIds());
+			createdInfo = new PonySlashCommandInfo(executable, wrapper, botUsable, isCaseSensitive, blacklisted, sendThinking, isEphemeral);
+		}
+		else {
+			throw new IllegalStateException("Unexpected instance " + discordExecutable.getClass().getSimpleName());
+		}
+		return createdInfo;
+	}
+
+	private void changeGuildAccess(PonyAccessWrapper<AllowedGuilds> guildsWrapper, PonyAnnotationWrapper wrapper, Set<Long> ids) {
+		guildsWrapper = new PonyAccessWrapper<>(guildsWrapper.annoClass(), ids, guildsWrapper.noAccess(), guildsWrapper.noAccessMessage());
+		wrapper.setAccessWrapper(WrapperType.GUILD, guildsWrapper);
 	}
 
 	private PonyRunnable instanceFunction(Class<? extends PonyRunnable> clazz) {
@@ -255,17 +250,15 @@ public class PonyCommandRegistry {
 		}
 	}
 
-	private <T> Set<Long> idsFromAcessor(PonyCommandExecutable command, T target,
-					Function<T, Class<? extends PonyAccessor>> accessorSolver,
-					Function<T, Set<Long>> defaultSolver) {
+	private Set<Long> idsFromAcessor(PonyCommandExecutable command,
+					Class<? extends PonyAccessor> accessorClass, long[] ids) {
 		Set<Long> accessorIds = new HashSet<>();
-		Class<? extends PonyAccessor> accessorClass = accessorSolver.apply(target);
 
-		if (!PonyAccessor.class.equals(accessorClass)) {
+		if (!PonyCommandRegistry.PONY_ACCESSOR_CLASS.equals(accessorClass)) {
 			accessorIds.addAll(this.solveAccessorIds(command, accessorClass));
 		}
 
-		accessorIds.addAll(defaultSolver.apply(target));
+		accessorIds.addAll(PonyUtils.toUpperLong(ids));
 		return accessorIds;
 	}
 
@@ -276,6 +269,7 @@ public class PonyCommandRegistry {
 			return Sets.newHashSet(accessorIds);
 		}
 		catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+			System.out.println("Class: " + accessorClass.getName());
 			throw new CommandRegisterException(e);
 		}
 	}
@@ -324,7 +318,7 @@ public class PonyCommandRegistry {
 		return getter.apply(anno);
 	}
 
-	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> RegistryEntry<E, I> commandInstance(E executable, Set<String> aliases, PonyCommandInfo<E> commandInfo) {
+	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> PonyRegistryEntry<E, I> commandInstance(E executable, Set<String> aliases, PonyCommandInfo<E> commandInfo) {
 		String rawLabel = executable.getRawLabel();
 		if (!commandInfo.isCaseSensitive()) {
 			rawLabel = rawLabel.toLowerCase(Locale.ROOT);
@@ -335,11 +329,11 @@ public class PonyCommandRegistry {
 
 	@NotNull
 	@SuppressWarnings("unchecked")
-	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> RegistryEntry<E, I> getRegistryEntry(Set<String> aliases, PonyCommandInfo<E> commandInfo, String rawLabel) {
-		return (RegistryEntry<E, I>) switch (commandInfo) {
-			case PonyGuildCommandInfo guildInfo -> new GuildRegistryEntry(rawLabel, guildInfo, guildInfo.getAllowedGuilds());
-			case PonySlashCommandInfo slashInfo -> new SlashRegistryEntry(rawLabel, slashInfo);
-			case PonyChatCommandInfo chatInfo -> new ChatRegistryEntry(rawLabel, aliases, chatInfo);
+	private <E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> PonyRegistryEntry<E, I> getRegistryEntry(Set<String> aliases, PonyCommandInfo<E> commandInfo, String rawLabel) {
+		return (PonyRegistryEntry<E, I>) switch (commandInfo) {
+			case PonyGuildCommandInfo guildInfo -> new PonyGuildRegistryEntry(rawLabel, guildInfo, guildInfo.getAllowedGuilds());
+			case PonySlashCommandInfo slashInfo -> new PonySlashRegistryEntry(rawLabel, slashInfo);
+			case PonyChatCommandInfo chatInfo -> new PonyChatRegistryEntry(rawLabel, aliases, chatInfo);
 			case default -> throw new IllegalStateException("Unexpected instance " + commandInfo.getClass().getSimpleName());
 		};
 	}
@@ -354,7 +348,12 @@ public class PonyCommandRegistry {
 	}
 
 	public boolean isChatCommandRegistered(String label) {
-		return Boolean.TRUE.equals(this.forChatCommands(reg -> reg.matches(label), x -> Boolean.TRUE));
+		for (PonyRegistryEntry entry : this.commands.getAllLeft()) {
+			if (entry.matches(label)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	@Nullable public PonyChatCommandExecutable getChatCommand(PonyChatLabel label) {
@@ -362,71 +361,44 @@ public class PonyCommandRegistry {
 	}
 
 	@Nullable public PonyChatCommandExecutable getChatCommand(String label) {
-		return this.forChatCommands(lbl -> lbl.matches(label), this::getChatCommand);
+		return this.getPonyChatCommandExecutor(this.getRegistryEntry(label, PonyRegistryType.CHAT));
 	}
 
-	@Nullable private PonyChatCommandExecutable getPonyChatCommandExecutor(ChatRegistryEntry label) {
-		return this.forChatCommands(reg -> reg.equals(label), this.chatCommands::get);
+	@Nullable private PonyChatCommandExecutable getPonyChatCommandExecutor(PonyChatRegistryEntry label) {
+		return this.commands.getRightValue(label, PonyChatCommandExecutable.class);
 	}
 
-	@Nullable public PonyChatCommandExecutable getChatCommand(ChatRegistryEntry label) {
+	@Nullable public PonyChatCommandExecutable getChatCommand(PonyChatRegistryEntry label) {
 		return this.getPonyChatCommandExecutor(label);
 	}
 
-	@Nullable private <R> R forChatCommands(Function<ChatRegistryEntry, Boolean> matchIf, Function<ChatRegistryEntry, R> result) {
-		return this.forCommands(this.chatCommands, matchIf, result);
-	}
-
 	@Nullable public PonyDiscordCommandExecutable getDiscordCommand(String label) {
-		return this.forDiscordCommands(lbl -> lbl.matches(label), this::getDiscordCommand);
+		return this.getPonyDiscordCommandExecutor(this.getRegistryEntry(label, PonyRegistryType.DISCORD));
 	}
 
-	@Nullable private PonyDiscordCommandExecutable getPonyDiscordCommandExecutor(DiscordRegistryEntry label) {
-		return this.forDiscordCommands(reg -> reg.equals(label), this.discordCommands::get);
-	}
-
-	@Nullable public PonyDiscordCommandExecutable getDiscordCommand(DiscordRegistryEntry label) {
-		return this.getPonyDiscordCommandExecutor(label);
-	}
-
-	@Nullable private <R> R forDiscordCommands(Function<DiscordRegistryEntry, Boolean> matchIf, Function<DiscordRegistryEntry, R> result) {
-		return this.forCommands(this.discordCommands, matchIf, result);
-	}
-
-	@NotNull private <L extends DiscordRegistryEntry> Map<L, PonyDiscordCommandExecutable> getRegistryLabel(Class<L> clazz) {
-		Map<L, PonyDiscordCommandExecutable> commands = new HashMap<>();
-		for (Map.Entry<DiscordRegistryEntry, PonyDiscordCommandExecutable> entry : this.discordCommands.entrySet()) {
-			DiscordRegistryEntry key = entry.getKey();
-			if (key.getClass().isAssignableFrom(clazz)) {
-				commands.put(clazz.cast(key), entry.getValue());
-			}
-		}
-		return commands;
-	}
-
-	@Nullable private <L extends RegistryEntry, E extends PonyCommandExecutable, R> R forCommands(Map<L, E> map, Function<L, Boolean> matchIf, Function<L, R> result) {
-		for (L registryLabel : map.keySet()) {
-			if (matchIf.apply(registryLabel)) {
-				return result.apply(registryLabel);
+	@Nullable private <R extends PonyRegistryEntry> R getRegistryEntry(String label, PonyRegistryType<R> type) {
+		for (PonyRegistryEntry entry : this.commands.getAllLeft()) {
+			if (type.isInstance(entry) && entry.matches(label)) {
+				return type.cast(entry);
 			}
 		}
 		return null;
 	}
 
-	public ChatRegistryEntry getLabel(PonyChatLabel label) {
-		return this.forChatCommands(req -> req.matches(label.getContent()), reg -> reg);
+	@Nullable private PonyDiscordCommandExecutable getPonyDiscordCommandExecutor(PonyDiscordRegistryEntry label) {
+		return this.commands.getRightValue(label, PonyDiscordCommandExecutable.class);
 	}
 
-	public PonyCommandInfo<PonyChatCommandExecutable> getChatCommandInfo(PonyChatCommandExecutor executor) {
-		return this.getCommandInfo(executor, this.chatCommands).getCommandInfo();
+	@Nullable public PonyDiscordCommandExecutable getDiscordCommand(PonyDiscordRegistryEntry label) {
+		return this.getPonyDiscordCommandExecutor(label);
+	}
+
+	public PonyChatCommandInfo getChatCommandInfo(PonyChatCommandExecutor executor) {
+		return this.commands.getLeftValue(executor, PonyRegistryType.CHAT.typeClass()).getCommandInfo();
 	}
 
 	public PonyDiscordCommandInfo getDiscordCommandInfo(PonyDiscordCommandExecutor executor) {
-		return this.getCommandInfo(executor, this.discordCommands).getCommandInfo();
-	}
-
-	private <R extends RegistryEntry, E extends PonyCommandExecutable> R getCommandInfo(E executor, BiMap<R, E> commands) {
-		return commands.inverse().get(executor);
+		return this.commands.getLeftValue(executor, PonyRegistryType.DISCORD.typeClass()).getCommandInfo();
 	}
 
 	public synchronized void shutdown() {
@@ -437,20 +409,22 @@ public class PonyCommandRegistry {
 		this.isShuttingDown = true;
 		if (Pony.getInstance().getConfig().unregisterCommands()) {
 			System.out.println("Shutting down Commands");
-			for (DiscordRegistryEntry label : this.discordCommands.keySet()) {
-				System.out.println("Unregistering Command");
-				if (label instanceof GuildRegistryEntry guildLabel) {
-					Set<Long> guildIds = guildLabel.getGuildIds();
-					this.unregisterCommands(guildIds);
+			for (PonyRegistryEntry entry : this.commands.getAllLeft()) {
+				if (entry instanceof PonyDiscordRegistryEntry<?, ?> label) {
+					System.out.println("Unregistering Command");
+					if (label instanceof PonyGuildRegistryEntry guildLabel) {
+						Set<Long> guildIds = guildLabel.getGuildIds();
+						this.unregisterCommands(guildIds);
+					}
+					else if (label instanceof PonySlashRegistryEntry) {
+						Set<Long> guildIds = this.getBot().getGuildIds();
+						this.unregisterCommands(guildIds);
+					}
+					else {
+						throw new IllegalStateException("Unexcpeted label type " + label.getClass().getSimpleName());
+					}
+					System.out.println("Command unregistered");
 				}
-				else if (label instanceof SlashRegistryEntry) {
-					Set<Long> guildIds = this.getBot().getGuildIds();
-					this.unregisterCommands(guildIds);
-				}
-				else {
-					throw new IllegalStateException("Unexcpeted label type " + label.getClass().getSimpleName());
-				}
-				System.out.println("Command unregistered");
 			}
 		}
 		this.isShutdown = true;

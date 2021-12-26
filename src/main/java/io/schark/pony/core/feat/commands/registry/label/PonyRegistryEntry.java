@@ -1,7 +1,7 @@
 package io.schark.pony.core.feat.commands.registry.label;
 
-import io.schark.pony.core.feat.commands.command.info.PonyCommandInfo;
 import io.schark.pony.core.feat.commands.executor.PonyCommandExecutable;
+import io.schark.pony.core.feat.commands.registry.info.PonyCommandInfo;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jetbrains.annotations.NotNull;
@@ -12,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
  */
 @Getter
 @RequiredArgsConstructor
-public abstract class RegistryEntry<E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> {
+public sealed abstract class PonyRegistryEntry<E extends PonyCommandExecutable, I extends PonyCommandInfo<E>> permits PonyChatRegistryEntry, PonyDiscordRegistryEntry {
 
 	private final String rawLabel;
 	private final I commandInfo;
