@@ -106,7 +106,7 @@ public final class Pony {
 	private List<PonyManager> getManagers() {
 		List<PonyManager> managers = new ArrayList<>();
 		for (PonyManagerType<?> manager : this.managers) {
-			managers.add(manager.getManager());
+			managers.add(manager.manager());
 		}
 		return managers;
 	}
@@ -123,8 +123,9 @@ public final class Pony {
 		this.initManager(PonyManagerType.AUDIO);
 	}
 
+
 	private <M extends PonyManager> void initManager(PonyManagerType<M> type) {
-		PonyManager manager = type.getManager();
+		PonyManager manager = type.manager();
 		this.managers.add(type);
 		manager.init();
 		manager.setEnabled(true);
@@ -134,7 +135,7 @@ public final class Pony {
 		return new Thread(() -> {
 			this.ponyBot.beforeShutdown();
 			System.out.println("Shutting down Pony");
-			PonyManagerType.COMMAND.getManager().getRegistry().shutdown();
+			PonyManagerType.COMMAND.manager().getRegistry().shutdown();
 			System.out.println("Shutting down JDA");
 			this.ponyBot.getJda().shutdownNow();
 			PonyUtils.await(()->this.ponyBot.getJda().getStatus() == JDA.Status.SHUTDOWN);
@@ -165,7 +166,7 @@ public final class Pony {
 
 	public <M extends PonyManager> M getManager(PonyManagerType<M> type) {
 		if (this.managers.contains(type)) {
-			return type.getManager();
+			return type.manager();
 		}
 		return null;
 	}

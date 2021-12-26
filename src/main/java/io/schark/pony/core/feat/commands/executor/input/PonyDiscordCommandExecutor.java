@@ -1,4 +1,6 @@
-package io.schark.pony.core.feat.commands.executor;
+package io.schark.pony.core.feat.commands.executor.input;
+
+import io.schark.pony.core.feat.commands.executor.PonyCommandExecutor;
 
 /**
  * @author Player_Schark

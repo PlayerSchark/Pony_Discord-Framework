@@ -5,23 +5,23 @@ import io.schark.pony.core.feat.commands.PonyManagerCommand;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
 import io.schark.pony.core.feat.commands.command.PonyPrivateChatCommand;
 import io.schark.pony.core.feat.commands.command.PonyPublicChatCommand;
-import io.schark.pony.core.feat.commands.command.info.PonyChatCommandInfo;
-import io.schark.pony.core.feat.commands.command.info.PonyCommandInfo;
-import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutor;
+import io.schark.pony.core.feat.commands.executor.input.PonyChatCommandExecutor;
 import io.schark.pony.core.feat.commands.in.PonyArg;
 import io.schark.pony.core.feat.commands.in.PonyChatArg;
 import io.schark.pony.core.feat.commands.in.PonyChatLabel;
 import io.schark.pony.core.feat.commands.registry.PonyCommandRegistry;
+import io.schark.pony.core.feat.commands.registry.info.PonyChatCommandInfo;
+import io.schark.pony.core.feat.commands.registry.info.PonyCommandInfo;
 import io.schark.pony.exception.CommandProcessException;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
-import net.dv8tion.jda.api.entities.IMentionable;
-import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.*;
+import net.dv8tion.jda.api.events.Event;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.events.message.priv.PrivateMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,16 +38,19 @@ public class PonyChatCommandListener extends ListenerAdapter {
 
 	@Override
 	public void onPrivateMessageReceived(@NotNull PrivateMessageReceivedEvent e) {
-		//TODO merge with method down here
+		this.onMessageReceived(e, e.getMessage(), e.getAuthor(), null);
 	}
 
 	@Override
-	public void onMessageReceived(MessageReceivedEvent e) {
-		if (e.getAuthor().getIdLong() == Pony.getInstance().getPonyBot().getId()) {
+	public void onMessageReceived(@NotNull MessageReceivedEvent e) {
+		this.onMessageReceived(e, e.getMessage(), e.getAuthor(), e.getMember());
+	}
+
+	private void onMessageReceived(Event e, Message message, User author, @Nullable Member member) {
+		if (author.getIdLong() == Pony.getInstance().getPonyBot().getId()) {
 			return;
 		}
 
-		Message message = e.getMessage();
 		if (!message.getContentRaw().startsWith(this.manager.getPrefix())) {
 			return;
 		}
@@ -70,8 +73,8 @@ public class PonyChatCommandListener extends ListenerAdapter {
 			return;
 		}
 
-		PonyChatCommandInfo info = (PonyChatCommandInfo) registry.getChatCommandInfo(executor);
-		if (!info.hasAccess(e)) {
+		PonyChatCommandInfo info = registry.getChatCommandInfo(executor);
+		if (!info.hasAccess(message, member)) {
 			return;
 		}
 
@@ -105,7 +108,7 @@ public class PonyChatCommandListener extends ListenerAdapter {
 		return new PonyChatLabel(jda, rawLabel);
 	}
 
-	private PonyChatCommand parseCommandMessage(MessageReceivedEvent e, boolean guildCommand, String[] splitted, Message message, PonyChatLabel label) {
+	private PonyChatCommand parseCommandMessage(Event e, boolean guildCommand, String[] splitted, Message message, PonyChatLabel label) {
 		JDA jda = this.manager.getJda();
 		IMentionable sender = this.getSender(message);
 		MessageChannel channel = message.getChannel();
@@ -127,8 +130,8 @@ public class PonyChatCommandListener extends ListenerAdapter {
 		return Collections.unmodifiableList(ponyArgs);
 	}
 
-	private PonyChatCommand getCommand(MessageReceivedEvent e, boolean guildCommand, IMentionable sender, Message message, MessageChannel channel, PonyChatLabel label, List<PonyArg<String>> args) {
-		return guildCommand ? new PonyPublicChatCommand(e, sender, message, channel, label, args) :
-						new PonyPrivateChatCommand(e, sender, message, channel, label, args);
+	private PonyChatCommand getCommand(Event e, boolean guildCommand, IMentionable sender, Message message, MessageChannel channel, PonyChatLabel label, List<PonyArg<String>> args) {
+		return guildCommand ? new PonyPublicChatCommand(((MessageReceivedEvent) e), sender, message, channel, label, args) :
+						new PonyPrivateChatCommand(((PrivateMessageReceivedEvent) e), sender, message, channel, label, args);
 	}
 }

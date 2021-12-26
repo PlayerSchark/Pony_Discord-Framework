@@ -1,7 +1,7 @@
 package io.schark.pony.core.feat.commands.registry.label;
 
-import io.schark.pony.core.feat.commands.command.info.PonyChatCommandInfo;
-import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutable;
+import io.schark.pony.core.feat.commands.executor.input.PonyChatCommandExecutable;
+import io.schark.pony.core.feat.commands.registry.info.PonyChatCommandInfo;
 import lombok.Getter;
 
 import java.util.Set;
@@ -10,11 +10,11 @@ import java.util.Set;
  * @author Player_Schark
  */
 @Getter
-public class ChatRegistryEntry extends RegistryEntry<PonyChatCommandExecutable, PonyChatCommandInfo> {
+public non-sealed class PonyChatRegistryEntry extends PonyRegistryEntry<PonyChatCommandExecutable, PonyChatCommandInfo> {
 
 	private final Set<String> aliases;
 
-	public ChatRegistryEntry(String rawLabel, Set<String> aliases, PonyChatCommandInfo commandInfo) {
+	public PonyChatRegistryEntry(String rawLabel, Set<String> aliases, PonyChatCommandInfo commandInfo) {
 		super(rawLabel, commandInfo);
 		this.aliases = aliases;
 	}
