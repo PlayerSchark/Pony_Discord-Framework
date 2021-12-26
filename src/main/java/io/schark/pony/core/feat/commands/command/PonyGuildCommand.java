@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * @author Player_Schark
  */
-public class PonyGuildCommand extends PonyDiscordCommand {
+public class PonyGuildCommand extends PonyDiscordCommand implements IPonyGuildable {
 
 	public PonyGuildCommand(SlashCommandEvent e, Member sender, InteractionHook hook, MessageChannel channel,
 					PonyChatLabel label, List<PonyGuildArg<?>> args) {

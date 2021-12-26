@@ -4,9 +4,8 @@ import io.schark.pny.example.AudioResult;
 import io.schark.pony.core.feat.audio.PonyAudioGuildController;
 import io.schark.pony.core.feat.commands.annotation.Alias;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
+import io.schark.pony.core.feat.commands.command.PonyPublicChatCommand;
 import io.schark.pony.core.feat.commands.executor.input.PonyChatCommandExecutor;
-import net.dv8tion.jda.api.entities.Guild;
-import net.dv8tion.jda.api.entities.VoiceChannel;
 
 public class PlayCommand extends PonyChatCommandExecutor {
 
@@ -16,14 +15,12 @@ public class PlayCommand extends PonyChatCommandExecutor {
     }
 
     @Override
-    public String executeCommand(PonyChatCommand command) {
+    public String executeCommand(PonyChatCommand cmd) {
+        PonyPublicChatCommand command = (PonyPublicChatCommand) cmd;
+        PonyAudioGuildController controller = PonyAudioGuildController.create(command);
 
-        Guild guild = command.getMessage().getGuild();
-        VoiceChannel channel = guild.getVoiceChannelById(841030060404375552L); //TEST Voice Channel (Team Voice)
-        PonyAudioGuildController controller = PonyAudioGuildController.create(guild);
-
-        controller.joinVoice(channel, search -> search.searchYoutube(command.getArgument(0), new AudioResult())
-                , 3_000); // timeout = 0 no delay | timeout = -1 no leave
+        controller.joinVoice(command, search -> search.searchYoutube(command.getStringArgument(0).getContent(), new AudioResult())
+                        , 3_000); // timeout = 0 no delay | timeout = -1 no leave
         return "has start";
     }
 }
