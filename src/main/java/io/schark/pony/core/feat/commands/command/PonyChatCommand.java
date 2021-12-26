@@ -24,15 +24,16 @@ public class PonyChatCommand extends PonyCommand<Event, PonyArg<String>> impleme
 		this.message = message;
 	}
 
+	@Override
 	public List<IMentionable> getMentions(Mention mention) {
 		return this.message.getMentions(mention.getType());
 	}
 
-	public boolean hasUserMention() {
+	@Override public boolean hasUserMention() {
 		return !this.message.getMentionedUsers().isEmpty();
 	}
 
-	public boolean hasMemberMention() {
+	@Override public boolean hasMemberMention() {
 		return !this.message.getMentionedMembers().isEmpty();
 	}
 }

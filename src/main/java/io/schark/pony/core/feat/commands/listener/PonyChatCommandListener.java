@@ -5,13 +5,13 @@ import io.schark.pony.core.feat.commands.PonyManagerCommand;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
 import io.schark.pony.core.feat.commands.command.PonyPrivateChatCommand;
 import io.schark.pony.core.feat.commands.command.PonyPublicChatCommand;
-import io.schark.pony.core.feat.commands.command.info.PonyChatCommandInfo;
-import io.schark.pony.core.feat.commands.command.info.PonyCommandInfo;
-import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutor;
+import io.schark.pony.core.feat.commands.executor.input.PonyChatCommandExecutor;
 import io.schark.pony.core.feat.commands.in.PonyArg;
 import io.schark.pony.core.feat.commands.in.PonyChatArg;
 import io.schark.pony.core.feat.commands.in.PonyChatLabel;
 import io.schark.pony.core.feat.commands.registry.PonyCommandRegistry;
+import io.schark.pony.core.feat.commands.registry.info.PonyChatCommandInfo;
+import io.schark.pony.core.feat.commands.registry.info.PonyCommandInfo;
 import io.schark.pony.exception.CommandProcessException;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
@@ -73,7 +73,7 @@ public class PonyChatCommandListener extends ListenerAdapter {
 			return;
 		}
 
-		PonyChatCommandInfo info = (PonyChatCommandInfo) registry.getChatCommandInfo(executor);
+		PonyChatCommandInfo info = registry.getChatCommandInfo(executor);
 		if (!info.hasAccess(message, member)) {
 			return;
 		}

@@ -2,11 +2,11 @@ package io.schark.pony.core.feat.commands.listener;
 
 import io.schark.pony.core.feat.commands.PonyManagerCommand;
 import io.schark.pony.core.feat.commands.command.PonyGuildCommand;
-import io.schark.pony.core.feat.commands.command.info.PonyDiscordCommandInfo;
-import io.schark.pony.core.feat.commands.executor.PonyDiscordCommandExecutor;
+import io.schark.pony.core.feat.commands.executor.input.PonyDiscordCommandExecutor;
 import io.schark.pony.core.feat.commands.in.PonyChatLabel;
 import io.schark.pony.core.feat.commands.in.PonyGuildArg;
 import io.schark.pony.core.feat.commands.registry.PonyCommandRegistry;
+import io.schark.pony.core.feat.commands.registry.info.PonyDiscordCommandInfo;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Member;

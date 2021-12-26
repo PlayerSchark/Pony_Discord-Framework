@@ -1,9 +1,10 @@
-package io.schark.pony.core.feat.commands.command.info;
+package io.schark.pony.core.feat.commands.registry.info;
 
 import io.schark.pony.core.feat.commands.annotation.impl.PonyRunnable;
-import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutor;
 import io.schark.pony.core.feat.commands.executor.PonyCommandExecutable;
-import lombok.Getter;
+import io.schark.pony.core.feat.commands.executor.input.PonyChatCommandExecutor;
+import io.schark.pony.core.feat.commands.registry.wrapper.PonyAnnotationWrapper;
+import io.schark.pony.core.feat.commands.registry.wrapper.WrapperType;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageChannel;
@@ -13,33 +14,22 @@ import net.dv8tion.jda.api.events.Event;
 import net.dv8tion.jda.api.requests.RestAction;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.annotation.Annotation;
 import java.util.Set;
 import java.util.function.Function;
 
 /**
  * @author Player_Schark
  */
-@Getter
 @RequiredArgsConstructor
 public abstract class PonyCommandInfo<E extends PonyCommandExecutable> {
 
 	private final E executable;
-	private final Set<Long> allowedRoles;
-	private final Set<Long> allowedUsers;
-	private final Set<Long> allowedGuilds;
-	private final Set<Long> allowedChannels;
+	private final PonyAnnotationWrapper wrapper;
 	private final boolean botUsable;
 	private final boolean sendTyping;
 	private final boolean caseSensitive;
 	private final boolean blacklisted;
-	@Nullable private final PonyRunnable noRole;
-	@Nullable private final PonyRunnable noUser;
-	@Nullable private final PonyRunnable noGuild;
-	@Nullable private final PonyRunnable noChannel;
-	@Nullable private final String noRoleMessage;
-	@Nullable private final String noUserMessage;
-	@Nullable private final String noGuildMessage;
-	@Nullable private final String noChannelMessage;
 
 	protected <Ev extends Event> void runNoAccess(String noAccessMessage, Function<String, RestAction> action, PonyRunnable runnable) {
 		if (runnable != null) {
@@ -129,5 +119,85 @@ public abstract class PonyCommandInfo<E extends PonyCommandExecutable> {
 			}
 		}
 		return false;
+	}
+
+	public E getExecutable() {
+		return this.executable;
+	}
+
+	public Set<Long> getAllowedRoles() {
+		return this.getAllowedIds(WrapperType.ROLE);
+	}
+
+	public Set<Long> getAllowedUsers() {
+		return this.getAllowedIds(WrapperType.USER);
+	}
+
+	public Set<Long> getAllowedGuilds() {
+		return this.getAllowedIds(WrapperType.GUILD);
+	}
+
+	public Set<Long> getAllowedChannels() {
+		return this.getAllowedIds(WrapperType.CHANNEL);
+	}
+
+	private <A extends Annotation> Set<Long> getAllowedIds(WrapperType<A> type) {
+		return this.wrapper.getAccessWrapper(type).accessIds();
+	}
+
+	public boolean isBotUsable() {
+		return this.botUsable;
+	}
+
+	public boolean isSendTyping() {
+		return this.sendTyping;
+	}
+
+	public boolean isCaseSensitive() {
+		return this.caseSensitive;
+	}
+
+	public boolean isBlacklisted() {
+		return this.blacklisted;
+	}
+
+	public PonyRunnable getNoRole() {
+		return this.getNoRunnable(WrapperType.ROLE);
+	}
+
+	public PonyRunnable getNoUser() {
+		return this.getNoRunnable(WrapperType.USER);
+	}
+
+	public PonyRunnable getNoGuild() {
+		return this.getNoRunnable(WrapperType.GUILD);
+	}
+
+	public PonyRunnable getNoChannel() {
+		return this.getNoRunnable(WrapperType.CHANNEL);
+	}
+
+	private <A extends Annotation> PonyRunnable getNoRunnable(WrapperType<A> type) {
+		return this.wrapper.getAccessWrapper(type).noAccess();
+	}
+
+	public String getNoRoleMessage() {
+		return this.getNoMessage(WrapperType.ROLE);
+	}
+
+	public String getNoUserMessage() {
+		return this.getNoMessage(WrapperType.USER);
+	}
+
+	public String getNoGuildMessage() {
+		return this.getNoMessage(WrapperType.GUILD);
+	}
+
+	public String getNoChannelMessage() {
+		return this.getNoMessage(WrapperType.CHANNEL);
+	}
+
+	private <A extends Annotation> String getNoMessage(WrapperType<A> type) {
+		return this.wrapper.getAccessWrapper(type).noAccessMessage();
 	}
 }

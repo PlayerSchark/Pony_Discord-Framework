@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -64,5 +65,27 @@ public class PonyUtils {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public static <T> T invoke(Object obj, String accessor, Class<T> result) {
+		try {
+			//noinspection unchecked
+			return (T) obj.getClass().getDeclaredMethod(accessor).invoke(obj);
+		}
+		catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+
+	public static <T> Class<T> invokeClass(Object obj, String accessor, Class<T> result) {
+		try {
+			//noinspection unchecked
+			return (Class<T>) obj.getClass().getDeclaredMethod(accessor).invoke(obj);
+		}
+		catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }

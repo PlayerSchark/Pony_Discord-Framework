@@ -1,4 +1,4 @@
-package io.schark.pony.core.feat.commands.executor;
+package io.schark.pony.core.feat.commands.executor.input;
 
 import io.schark.pony.core.feat.commands.annotation.impl.PonyAccessor;
 import io.schark.pony.core.feat.commands.command.PonyDiscordCommand;

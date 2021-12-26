@@ -1,8 +1,9 @@
-package io.schark.pony.core.feat.commands.executor;
+package io.schark.pony.core.feat.commands.executor.input;
 
 import io.schark.pony.core.feat.commands.command.IPonyDiscordCommand;
 import io.schark.pony.core.feat.commands.command.PonyDiscordCommand;
 import io.schark.pony.core.feat.commands.command.PonyGuildCommand;
+import io.schark.pony.core.feat.commands.executor.PonyCommandExecutable;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.RestAction;
