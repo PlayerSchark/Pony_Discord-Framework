@@ -1,18 +1,9 @@
 package io.schark.pony;
 
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.player.DefaultAudioPlayerManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManager;
-import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
-import io.schark.pony.core.PonyBot;
-import io.schark.pony.core.PonyConfig;
-import io.schark.pony.core.PonyManager;
-import io.schark.pony.core.PonyManagerType;
 import io.schark.pony.core.*;
 import io.schark.pony.core.feat.PonyManagerListener;
 import io.schark.pony.exception.PonyStartException;
 import io.schark.pony.utils.PonyUtils;
-import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import org.jetbrains.annotations.NotNull;
@@ -72,7 +63,7 @@ public final class Pony {
 		this.ponyBot = this.newPonyBot();
 		System.out.println("Building Pony");
 		this.build();
-		System.out.println("Injecting PonyBot");
+		System.out.println("Injecting PonyBot with config values");
 		this.injector = new PonyInjector(this.ponyBot, this.config);
 		this.injector.injectBot();
 		this.ponyBot.init(args);

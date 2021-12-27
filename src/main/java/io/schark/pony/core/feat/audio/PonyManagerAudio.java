@@ -18,6 +18,7 @@ public class PonyManagerAudio extends PonyManager {
 
     private AudioPlayerManager audioPlayerManager;
     private final Pattern youtubeRegex = Pattern.compile("^((?:https?:)?//)?((?:www|m)\\.)?((?:youtube\\.com|youtu.be))(/(?:[\\w\\-]+\\?v=|embed/|v/)?)([\\w\\-]+)(\\S+)?$");
+    private final Pattern spotifyRegex = Pattern.compile("^(https://open.spotify.com/user/spotify/playlist/|spotify:user:spotify:playlist:)([a-zA-Z0-9]+)(.*)$");
     private Map<Guild, PonyAudioGuildController> audioGuildList;
 
     @Override
