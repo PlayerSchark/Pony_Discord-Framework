@@ -1,6 +1,5 @@
 package io.schark.pony.core;
 
-import io.schark.pony.Pony;
 import io.schark.pony.exception.PonyStartException;
 import io.schark.pony.utils.PonyUtils;
 import lombok.Getter;
@@ -8,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
 
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * @author Player_Schark
@@ -27,11 +25,7 @@ public class PonyInjector {
 	}
 
 	private void injectToken() throws IOException, IllegalAccessException, NoSuchFieldException {
-		String path = this.config.getTokenPath();
-		InputStream input = Pony.class.getResourceAsStream("/" + path);
-		String[] fileContent = PonyUtils.getFileContent(input).split("\n");
-		int line = this.config.getTokenLine();
-		String token = fileContent[line];
+		String token = this.getConfig().getDiscordToken();
 		PonyUtils.setValue(this.ponyBot, "token", token, PonyBot.class);
 	}
 

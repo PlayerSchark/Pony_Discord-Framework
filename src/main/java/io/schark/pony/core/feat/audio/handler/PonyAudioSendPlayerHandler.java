@@ -16,14 +16,14 @@ public class PonyAudioSendPlayerHandler implements AudioSendHandler {
 
     @Override
     public boolean canProvide() {
-        lastFrame = audioPlayer.provide();
-        return lastFrame != null;
+        this.lastFrame = this.audioPlayer.provide();
+        return this.lastFrame != null;
     }
 
     @Nullable
     @Override
     public ByteBuffer provide20MsAudio() {
-        return ByteBuffer.wrap(lastFrame.getData());
+        return ByteBuffer.wrap(this.lastFrame.getData());
     }
 
     public boolean isOpus() {

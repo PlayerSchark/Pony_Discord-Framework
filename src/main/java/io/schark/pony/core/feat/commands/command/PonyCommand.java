@@ -27,6 +27,10 @@ public abstract class PonyCommand<E extends Event, A extends PonyArg<?>> impleme
 	private final PonyChatLabel label;
 	private final List<A> arguments;
 
+	public void answer(String answer) {
+		this.getChannel().sendMessage(answer).queue();
+	}
+
 	@Override public IMentionable getFirstMentionedOrSender() {
 		for (A arg : this.arguments) {
 			if (arg.hasMention()) {

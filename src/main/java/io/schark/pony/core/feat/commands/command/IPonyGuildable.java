@@ -6,10 +6,10 @@ import net.dv8tion.jda.api.entities.Member;
 /**
  * @author Player_Schark
  */
-public interface IPonyGuildable {
-	Member getSender();
+public interface IPonyGuildable extends IPonyCommand {
+	@Override Member getSender();
 
-	Member getFirstMentionedOrSender();
+	@Override Member getFirstMentionedOrSender();
 
 	Guild getGuild();
 }

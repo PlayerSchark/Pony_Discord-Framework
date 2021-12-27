@@ -19,19 +19,21 @@ import java.util.function.Consumer;
 @Getter
 public class PonyAudioGuildController {
 
+    private static final int TIMEOUT_COUNTER = 0;
+    private static final int DEFAULT_TIMEOUT = 1;
     private final Guild guild;
-    private final AudioPlayer player;
+    private final AudioPlayer audioPlayer;
     private final AudioPlayerManager audioPlayerManager;
     private final AudioManager guildManager;
     private volatile VoiceChannel channel;
-    private volatile long[] timeout = new long[0];
+    private volatile long[] timeouts = new long[0];
 
     public PonyAudioGuildController(Guild guild, AudioPlayerManager audioPlayerManager) {
         this.guild = guild;
         this.audioPlayerManager = audioPlayerManager;
-        this.player = audioPlayerManager.createPlayer();
+        this.audioPlayer = audioPlayerManager.createPlayer();
         this.guildManager = this.guild.getAudioManager();
-        this.guildManager.setSendingHandler(new PonyAudioSendPlayerHandler(this.player));
+        this.guildManager.setSendingHandler(new PonyAudioSendPlayerHandler(this.audioPlayer));
     }
 
     public static PonyAudioGuildController create(IPonyGuildable guildable) {
@@ -49,7 +51,7 @@ public class PonyAudioGuildController {
      * @param member command member to join
      * @param onJoin action that sould be executed on join
      */
-    public void joinVoice(Member member, Consumer<PonySearchQuarry> onJoin) {
+    public void joinVoice(Member member, Consumer<PonySearchQuerry> onJoin) {
         this.joinVoice(member, onJoin, 0);
     }
 
@@ -63,10 +65,10 @@ public class PonyAudioGuildController {
      * @param onJoin  action that sould be executed on join
      * @param timeout timeout to leave the channel if the channel is empty.
      */
-    public void joinVoice(Member member, Consumer<PonySearchQuarry> onJoin, long timeout) {
+    public void joinVoice(Member member, Consumer<PonySearchQuerry> onJoin, long timeout) {
         GuildVoiceState state = member.getVoiceState();
         if (state == null) {
-            throw new JoinVoiceFailedException("Bot can´t Connected whit a Voice Channel because the VoiceState is null");
+            throw new JoinVoiceFailedException("Bot can't Connected whit a Voice Channel because the VoiceState is null");
         }
         this.joinVoice(state.getChannel(), onJoin, timeout);
     }
@@ -77,8 +79,8 @@ public class PonyAudioGuildController {
      * @param command command to extract member from
      * @param onJoin  action that sould be executed on join
      */
-    public void joinVoice(IPonyGuildable command, Consumer<PonySearchQuarry> onJoin) {
-        this.joinVoice(command, onJoin, 0);
+    public void joinVoice(IPonyGuildable command, Consumer<PonySearchQuerry> onJoin, String failMessage) {
+        this.joinVoice(command, onJoin, 0, failMessage);
     }
 
     /**
@@ -91,13 +93,18 @@ public class PonyAudioGuildController {
      * @param onJoin  action that sould be executed on join
      * @param timeout timeout to leave the channel if the channel is empty.
      */
-    public void joinVoice(IPonyGuildable command, Consumer<PonySearchQuarry> onJoin, long timeout) {
+    public void joinVoice(IPonyGuildable command, Consumer<PonySearchQuerry> onJoin, long timeout, String failMessage) {
         Member member = command.getFirstMentionedOrSender();
         GuildVoiceState state = member.getVoiceState();
         if (state == null) {
             return;
         }
-        this.joinVoice(state.getChannel(), onJoin, timeout);
+        try {
+            this.joinVoice(state.getChannel(), onJoin, timeout);
+        }
+        catch (JoinVoiceFailedException e) {
+            command.getChannel().sendMessage(failMessage).queue();
+        }
     }
 
     /**
@@ -106,7 +113,7 @@ public class PonyAudioGuildController {
      * @param channel channel to join
      * @param onJoin  action that sould be executed on join
      */
-    public void joinVoice(VoiceChannel channel, Consumer<PonySearchQuarry> onJoin) {
+    public void joinVoice(VoiceChannel channel, Consumer<PonySearchQuerry> onJoin) throws JoinVoiceFailedException {
         this.joinVoice(channel, onJoin, 0);
     }
 
@@ -120,32 +127,32 @@ public class PonyAudioGuildController {
      * @param onJoin  action that sould be executed on join
      * @param timeout timeout to leave the channel if the channel is empty.
      */
-    public void joinVoice(VoiceChannel channel, Consumer<PonySearchQuarry> onJoin, long timeout) {
+    public void joinVoice(VoiceChannel channel, Consumer<PonySearchQuerry> onJoin, long timeout) throws JoinVoiceFailedException {
         if (channel == null) {
-            throw new JoinVoiceFailedException("Bot can´t Connected whit a Voice Channel because the Channel is null");
+            throw new JoinVoiceFailedException("Bot can't Connected whit a Voice Channel because the Channel is null");
         }
         this.guildManager.openAudioConnection(channel);
-        this.player.setVolume(10);
+        this.audioPlayer.setVolume(10);
         this.channel = channel;
-        this.timeout = new long[] { timeout, timeout };
-        PonySearchQuarry quarry = new PonySearchQuarry(this.audioPlayerManager);
-        onJoin.accept(quarry);
+        this.timeouts = new long[] { timeout, timeout };
+        PonySearchQuerry querry = new PonySearchQuerry(this.audioPlayerManager);
+        onJoin.accept(querry);
     }
 
     public void moveBotToVoice(VoiceChannel channel) {
         this.moveBotToVoice(channel, null);
     }
 
-    public void moveBotToVoice(VoiceChannel channel, Consumer<PonySearchQuarry> onJoin) {
+    public void moveBotToVoice(VoiceChannel channel, Consumer<PonySearchQuerry> onJoin) {
         if (channel == null) {
-            throw new JoinVoiceFailedException("Bot can´t Connected whit a Voice Channel because the Channel is null");
+            throw new JoinVoiceFailedException("Bot can't Connected whit a Voice Channel because the Channel is null");
         }
         this.guildManager.openAudioConnection(channel);
         this.channel = channel;
-        this.timeout[0] = this.timeout[1];
+        this.timeouts[PonyAudioGuildController.TIMEOUT_COUNTER] = this.timeouts[PonyAudioGuildController.DEFAULT_TIMEOUT];
         if (onJoin != null) {
-            PonySearchQuarry quarry = new PonySearchQuarry(this.audioPlayerManager);
-            onJoin.accept(quarry);
+            PonySearchQuerry querry = new PonySearchQuerry(this.audioPlayerManager);
+            onJoin.accept(querry);
         }
     }
 
@@ -160,7 +167,7 @@ public class PonyAudioGuildController {
     }
 
     public void setSpeakVolume(int volume) {
-        this.player.setVolume(volume);
+        this.audioPlayer.setVolume(volume);
     }
 
     public void setAutoReconnected(boolean reconnected) {
@@ -168,22 +175,22 @@ public class PonyAudioGuildController {
     }
 
     public void setNewTimeout(int timeout) {
-        this.timeout = new long[]{timeout, timeout};
+        this.timeouts = new long[] { timeout, timeout };
     }
 
     public void resetTimeout() {
-        this.timeout[0] = this.timeout[1];
+        this.timeouts[PonyAudioGuildController.TIMEOUT_COUNTER] = this.timeouts[PonyAudioGuildController.DEFAULT_TIMEOUT];
     }
 
     public void stopTrack() {
-        this.player.stopTrack();
+        this.audioPlayer.stopTrack();
     }
 
     public boolean pause() {
         if (this.isPaused()) {
             return false;
         }
-        this.player.setPaused(true);
+        this.audioPlayer.setPaused(true);
         return true;
     }
 
@@ -191,32 +198,32 @@ public class PonyAudioGuildController {
         if (!this.isPaused()) {
             return false;
         }
-        this.player.setPaused(false);
+        this.audioPlayer.setPaused(false);
         return true;
     }
 
     public boolean isPaused() {
-        return this.player.isPaused();
+        return this.audioPlayer.isPaused();
     }
 
     public AudioTrack getPlayingTrack() {
-        return this.player.getPlayingTrack();
+        return this.audioPlayer.getPlayingTrack();
     }
 
     public void voiceTimeout() {
-        if (this.timeout[0] == -1) {
+        if (this.timeouts[PonyAudioGuildController.TIMEOUT_COUNTER] == -1) {
             return;
         }
         new Thread(() -> {
-            for (;this.timeout[0] > 0; this.timeout[0]--) {
-                 if (this.channel.getMembers().size() > 1) {
-                     this.timeout[0] = this.timeout[1];
-                     return;
-                 }
+            for (; this.timeouts[PonyAudioGuildController.TIMEOUT_COUNTER] > 0; this.timeouts[PonyAudioGuildController.TIMEOUT_COUNTER]--) {
+                if (this.channel.getMembers().size() > 1) {
+                    this.timeouts[PonyAudioGuildController.TIMEOUT_COUNTER] = this.timeouts[PonyAudioGuildController.DEFAULT_TIMEOUT];
+                    return;
+                }
             }
             this.guildManager.closeAudioConnection();
             this.channel = null;
-            this.timeout = new long[0];
+            this.timeouts = new long[0];
         }).start();
     }
 
