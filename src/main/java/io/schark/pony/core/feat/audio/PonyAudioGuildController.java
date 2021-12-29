@@ -5,6 +5,7 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import io.schark.pony.core.PonyManagerType;
 import io.schark.pony.core.feat.audio.handler.PonyAudioSendPlayerHandler;
+import io.schark.pony.core.feat.audio.handler.PonyQueueHandler;
 import io.schark.pony.core.feat.commands.command.IPonyGuildable;
 import io.schark.pony.exception.JoinVoiceFailedException;
 import lombok.Getter;
@@ -25,6 +26,7 @@ public class PonyAudioGuildController {
     private final AudioPlayer audioPlayer;
     private final AudioPlayerManager audioPlayerManager;
     private final AudioManager guildManager;
+    private PonyQueueHandler handler;
     private volatile VoiceChannel channel;
     private volatile long[] timeouts = new long[0];
 
@@ -43,6 +45,11 @@ public class PonyAudioGuildController {
 
     public static PonyAudioGuildController create(Guild guild) {
         return PonyManagerType.AUDIO.manager().createGuildAudio(guild);
+    }
+
+    public void loadQueueHandler(PonyQueueHandler handler) {
+        this.handler = handler;
+        this.audioPlayer.addListener(new PonyAudioListener(handler));
     }
 
     /**

@@ -5,12 +5,9 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import io.schark.pny.example.PlayListHandler;
 import io.schark.pony.core.feat.audio.PonyAudioGuildController;
 import io.schark.pony.core.feat.commands.command.PonyCommand;
 import lombok.Getter;
-
-import java.util.List;
 
 @Getter
 public abstract class PonyAudioResultHandler<C extends PonyCommand> implements AudioLoadResultHandler {
@@ -25,9 +22,6 @@ public abstract class PonyAudioResultHandler<C extends PonyCommand> implements A
 
 	protected void playTrack(AudioTrack audioTrack) {
 		this.getAudioPlayer().playTrack(audioTrack);
-	}
-
-	protected void playTrack(List<AudioTrack> tracks, PlayListHandler playListHandler) {
 	}
 
 	@Override public void trackLoaded(AudioTrack audioTrack) {
