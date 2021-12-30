@@ -1,7 +1,6 @@
 package io.schark.pony.core.feat.audio;
 
 import com.google.common.base.Joiner;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import io.schark.pony.Pony;
 import io.schark.pony.core.PonyManagerType;
 import io.schark.pony.core.feat.commands.in.PonyArg;
@@ -51,7 +50,8 @@ public class PonySearchQuerry {
 	}
 
 	public void searchYoutube(String querry) {
-		String uri = "ytsearch:" + querry;
+		String prefix = PonySearchQuerry.regexMatch(PonyManagerAudio::getYoutubeRegex, querry) ? "" : "ytsearch:";
+		String uri = prefix + querry;
 		System.out.println("Loading youtube uri " + uri);
 		this.controller.loadItem(uri);
 		System.out.println("Youtube uri " + uri + " loaded");
