@@ -3,7 +3,9 @@ package io.schark.pny.example;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import io.schark.pony.core.feat.audio.PonyAudioResult;
+import io.schark.pony.core.feat.audio.PonyAudioGuildController;
+import io.schark.pony.core.feat.audio.handler.PonyAudioResultHandler;
+import io.schark.pony.core.feat.commands.command.PonyChatCommand;
 
 public class AudioResultHandler extends PonyAudioResultHandler<PonyChatCommand> {
 
