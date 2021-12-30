@@ -37,7 +37,8 @@ public final class PonyAudioGuildController {
     private AudioPlayer audioPlayer;
     private final AudioPlayerManager audioPlayerManager;
     private final AudioManager guildManager;
-    private PonyQueueHandler queueHandler;
+    private PonyQueueHandler queue;
+    @Setter(AccessLevel.PRIVATE) private PonyAudioQueueResultHandler queueResultHandler;
     @Setter(AccessLevel.PRIVATE) private PonyAudioResultHandler<?> resultHandler;
     private volatile long[] timeouts = new long[0];
 
