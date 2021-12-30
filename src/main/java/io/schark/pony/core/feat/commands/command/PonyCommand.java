@@ -1,5 +1,6 @@
 package io.schark.pony.core.feat.commands.command;
 
+import com.google.common.base.Joiner;
 import io.schark.pony.core.feat.commands.in.PonyArg;
 import io.schark.pony.core.feat.commands.in.PonyChatLabel;
 import lombok.Getter;
@@ -67,5 +68,9 @@ public abstract class PonyCommand<E extends Event, A extends PonyArg<?>> impleme
 			result.add(argument.getContentAsString());
 		}
 		return Collections.unmodifiableList(result);
+	}
+
+	public String getRawArgContent() {
+		return this.label.getContent() + " " + Joiner.on(" ").join(this.getRawArguments());
 	}
 }

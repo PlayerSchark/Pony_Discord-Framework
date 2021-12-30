@@ -7,6 +7,7 @@ import io.schark.pony.core.feat.audio.PonyAudioGuildController;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,14 +21,13 @@ public class PonyQueueHandler {
 	private final PonyAudioGuildController controller;
 	private Deque<AudioTrackInfo> audioTracks;
 	@Setter private AudioTrackInfo currentInfo;
-	@Setter private AudioTrack currentTrack;
-	@Setter private AudioTrack beforeTrack;
+	//@Setter private AudioTrack currentTrack;
 	@Setter private boolean loop;
 	@Setter private boolean queueLoop;
 
-	public PonyQueueHandler(AudioPlayer player, List<AudioTrack> audioTracks, PonyAudioGuildController controller) {
+	public PonyQueueHandler(AudioPlayer player, PonyAudioGuildController controller) {
 		this.player = player;
-		this.audioTracks = this.audioInfo(audioTracks);
+		this.audioTracks = new LinkedList<>();
 		this.controller = controller;
 	}
 
@@ -39,52 +39,72 @@ public class PonyQueueHandler {
 		return list;
 	}
 
-	private AudioTrack getFromCurrentInfo() {
-		AudioTrackInfo info = this.getCurrentInfo();
-		this.controller.loadItem(info);
-		return this.getCurrentTrack();
-	}
-
 	public void addNewPlayList(List<AudioTrack> audioTracks) {
-		this.audioTracks = this.audioInfo(audioTracks);
+		this.audioTracks.addAll(this.audioInfo(audioTracks));
 	}
 
 	public void addTrackInfo(AudioTrackInfo track) {
 		this.audioTracks.add(track);
 	}
 
-	public void nextTrack() {
-		AudioTrackInfo nextTrack = this.isLoop()
-				? this.getCurrentInfo()
-				: this.isQueueLoop()
-				? this.getAudioTracks().poll() : this.getAudioTracks().pop();
-		System.out.println(nextTrack);
-		this.playTrack(nextTrack);
+	public synchronized void nextTrack() {
+		boolean loop = this.isLoop();
+		AudioTrackInfo nextTrack = loop
+						? this.getCurrentInfo()
+						: this.getAudioTracks().poll();
+		String asString = nextTrack == null ? "null" : (nextTrack.title + ":" + nextTrack.identifier);
+		System.out.println("load next: " + asString);
+		this.loadTrack(nextTrack);
+		if (!loop && this.isQueueLoop()) {
+			this.audioTracks.add(nextTrack);
+		}
 	}
 
-	public void nextTrackAndBreakAllLoop() {
+	public synchronized void nextTrackAndBreakAllLoop() {
 		AudioTrackInfo nextTrack = this.getAudioTracks().pop();
 		this.setLoop(false);
 		this.setQueueLoop(false);
-		this.playTrack(nextTrack);
+		this.loadTrack(nextTrack);
 	}
 
-	public void nextTrackAndBreakTrackLoop() {
+	public synchronized void nextTrackAndBreakTrackLoop() {
 		AudioTrackInfo nextTrack = this.getAudioTracks().pop();
 		this.setLoop(false);
-		this.playTrack(nextTrack);
+		this.loadTrack(nextTrack);
 	}
 
-	public void nextTrackAndBreakQueueLoop() {
+	public synchronized void nextTrackAndBreakQueueLoop() {
 		AudioTrackInfo nextTrack = this.getAudioTracks().pop();
 		this.setQueueLoop(false);
-		this.playTrack(nextTrack);
+		this.loadTrack(nextTrack);
 	}
 
-	private void playTrack(AudioTrackInfo info) {
-		this.setBeforeTrack(this.getCurrentTrack());
+	public synchronized void reset() {
+		this.loop = false;
+		this.queueLoop = false;
+		this.clear();
+	}
+
+	public synchronized void clear() {
+		this.setCurrentInfo(null);
+		this.audioTracks.clear();
+	}
+
+	public void shuffle() {
+		Collections.shuffle((List<?>) this.audioTracks);
+	}
+
+	public synchronized void loadTrack(AudioTrackInfo info) {
 		this.setCurrentInfo(info);
-		AudioTrack track = this.getFromCurrentInfo();
-		this.setCurrentTrack(track);
+		this.loadInfoIntoController();
+	}
+
+	private synchronized void loadInfoIntoController() {
+		AudioTrackInfo info = this.getCurrentInfo();
+		this.controller.getAudioPlayerManager().loadItem(info.identifier, this.controller.getQueueResultHandler());
+	}
+
+	public boolean hasNext() {
+		return this.isLoop() || this.audioTracks.iterator().hasNext();
 	}
 }
