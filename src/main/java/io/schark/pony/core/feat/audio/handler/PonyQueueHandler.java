@@ -2,101 +2,88 @@ package io.schark.pony.core.feat.audio.handler;
 
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
+import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
+import io.schark.pony.core.feat.audio.PonyAudioGuildController;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.LinkedList;
 import java.util.List;
 
 /**
- * @author Player_Schark
+ * @author Player_Slimey
  */
 @Getter
 public class PonyQueueHandler {
 	private final AudioPlayer player;
-	private final List<AudioTrack> audioTracks;
-	private AudioTrack nowTrack;
-	private AudioTrack beforeTrack;
-	private int trackSize = 0;
-	private boolean loop;
-	private boolean queueLoop;
+	private final PonyAudioGuildController controller;
+	private Deque<AudioTrackInfo> audioTracks;
+	@Setter private AudioTrackInfo currentInfo;
+	@Setter private AudioTrack currentTrack;
+	@Setter private AudioTrack beforeTrack;
+	@Setter private boolean loop;
+	@Setter private boolean queueLoop;
 
-	public PonyQueueHandler(AudioPlayer player, List<AudioTrack> audioTracks) {
+	public PonyQueueHandler(AudioPlayer player, List<AudioTrack> audioTracks, PonyAudioGuildController controller) {
 		this.player = player;
-		this.audioTracks = audioTracks;
+		this.audioTracks = this.audioInfo(audioTracks);
+		this.controller = controller;
 	}
 
-	public void playFirstTrack() {
-		AudioTrack track = this.getAudioTracks().get(0);
-		player.playTrack(track);
-		this.setNowTrack(track);
+	private Deque<AudioTrackInfo> audioInfo(List<AudioTrack> audioTracks) {
+		Deque<AudioTrackInfo> list = new LinkedList<>();
+		for (AudioTrack track : audioTracks) {
+			list.add(track.getInfo());
+		}
+		return list;
+	}
+
+	private AudioTrack getFromCurrentInfo() {
+		AudioTrackInfo info = this.getCurrentInfo();
+		this.controller.loadItem(info);
+		return this.getCurrentTrack();
+	}
+
+	public void addNewPlayList(List<AudioTrack> audioTracks) {
+		this.audioTracks = this.audioInfo(audioTracks);
+	}
+
+	public void addTrackInfo(AudioTrackInfo track) {
+		this.audioTracks.add(track);
 	}
 
 	public void nextTrack() {
-		AudioTrack nextTrack =
-				this.getNowTrack() == null ? this.getAudioTracks().get(0)
-						: this.isLoop() ? this.getNowTrack()
-						: this.getAudioTracks().get(trackSize);
+		AudioTrackInfo nextTrack = this.isLoop()
+				? this.getCurrentInfo()
+				: this.isQueueLoop()
+				? this.getAudioTracks().poll() : this.getAudioTracks().pop();
+		System.out.println(nextTrack);
 		this.playTrack(nextTrack);
 	}
 
 	public void nextTrackAndBreakAllLoop() {
-		AudioTrack nextTrack = this.getNowTrack() == null ? this.getAudioTracks().get(0)
-				: this.getAudioTracks().get(trackSize);
-		this.loopCurrentTrack(false);
-		this.loopQueue(false);
+		AudioTrackInfo nextTrack = this.getAudioTracks().pop();
+		this.setLoop(false);
+		this.setQueueLoop(false);
 		this.playTrack(nextTrack);
 	}
 
 	public void nextTrackAndBreakTrackLoop() {
-		AudioTrack nextTrack = this.getNowTrack() == null ? this.getAudioTracks().get(0)
-				: this.getAudioTracks().get(trackSize);
-		this.loopCurrentTrack(false);
+		AudioTrackInfo nextTrack = this.getAudioTracks().pop();
+		this.setLoop(false);
 		this.playTrack(nextTrack);
 	}
 
 	public void nextTrackAndBreakQueueLoop() {
-		AudioTrack nextTrack = this.getNowTrack() == null ? this.getAudioTracks().get(0)
-				: this.getAudioTracks().get(trackSize);
-		this.loopQueue(false);
+		AudioTrackInfo nextTrack = this.getAudioTracks().pop();
+		this.setQueueLoop(false);
 		this.playTrack(nextTrack);
 	}
 
-	public void loopCurrentTrack(boolean loop) {
-		this.loop = loop;
-	}
-
-	public void loopQueue(boolean loop) {
-		this.queueLoop = loop;
-	}
-
-	public void setNowTrack(AudioTrack track) {
-		this.nowTrack = track;
-	}
-
-	public void setBeforeTrack(AudioTrack beforeTrack) {
-		this.beforeTrack = beforeTrack;
-	}
-
-	public void setCurrentTrackSize(int size) {
-		this.trackSize = size;
-	}
-
-	public void addTrackSize(int size) {
-		this.trackSize = trackSize + size;
-	}
-
-	private void playTrack(AudioTrack track) {
-		this.setBeforeTrack(this.getNowTrack());
-		this.setNowTrack(track);
-		this.player.playTrack(track);
-		if (this.isQueueLoop()) {
-			if (this.getAudioTracks().size() <= this.getTrackSize()) {
-				this.setCurrentTrackSize(0);
-			} else {
-				this.addTrackSize(1);
-			}
-		} else if (!this.isLoop()) {
-			this.addTrackSize(1);
-		}
+	private void playTrack(AudioTrackInfo info) {
+		this.setBeforeTrack(this.getCurrentTrack());
+		this.setCurrentInfo(info);
+		AudioTrack track = this.getFromCurrentInfo();
+		this.setCurrentTrack(track);
 	}
 }

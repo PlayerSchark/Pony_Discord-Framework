@@ -12,6 +12,9 @@ import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import javax.annotation.Nonnull;
 import java.util.List;
 
+/**
+ * @author Player_Slimey
+ */
 public class VoiceLeaveListener extends ListenerAdapter {
 
     //TODO: is for testing

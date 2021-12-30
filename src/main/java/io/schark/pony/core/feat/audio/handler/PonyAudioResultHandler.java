@@ -9,8 +9,11 @@ import io.schark.pony.core.feat.audio.PonyAudioGuildController;
 import io.schark.pony.core.feat.commands.command.PonyCommand;
 import lombok.Getter;
 
+/**
+ * @author Player_Slimey
+ */
 @Getter
-public abstract class PonyAudioResultHandler<C extends PonyCommand> implements AudioLoadResultHandler {
+public abstract class PonyAudioResultHandler<C extends PonyCommand<?, ?>> implements AudioLoadResultHandler {
 
 	private final AudioPlayer audioPlayer;
 	private final C command;

@@ -18,22 +18,17 @@ public class AudioResultHandler extends PonyAudioResultHandler<PonyChatCommand> 
 
     @Override public void trackLoaded(PonyChatCommand command, AudioTrack audioTrack) {
         this.playTrack(audioTrack);
-        command.answer("playing track");
+        //command.answer("playing track");
     }
 
     @Override
     public void playlistLoaded(PonyChatCommand command, AudioPlaylist audioPlaylist) {
-
-        if (this.controller.getHandler() == null) {
-            System.out.println("before load Handler");
-            PonyQueueHandler handler = new PonyQueueHandler(this.controller.getAudioPlayer(), audioPlaylist.getTracks());
-            System.out.println("after load Handler");
+        if (this.controller.getQueueHandler() == null) {
+            PonyQueueHandler handler = new PonyQueueHandler(this.getAudioPlayer(), audioPlaylist.getTracks(), this.controller);
             this.controller.loadQueueHandler(handler);
-            System.out.println("load Handler");
+            handler.nextTrack();
         }
-        System.out.print("before Player firstTrack");
-        this.controller.getHandler().playFirstTrack();
-        System.out.print("after Player firstTrack");
+
         command.answer("playing playlist");
     }
 

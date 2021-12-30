@@ -8,6 +8,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.nio.ByteBuffer;
 
+/**
+ * @author Player_Slimey
+ */
 @RequiredArgsConstructor
 public class PonyAudioSendPlayerHandler implements AudioSendHandler {
 

@@ -21,12 +21,12 @@ public class PlayCommand extends PonyChatCommandExecutor {
     @Override
     public String executeCommand(PonyChatCommand cmd) {
         PonyPublicChatCommand command = (PonyPublicChatCommand) cmd;
-        PonyAudioGuildController controller = PonyAudioGuildController.create(command);
+        PonyAudioGuildController controller = PonyAudioGuildController.create(command, ctrl->new AudioResultHandler(ctrl, command));
         controller.joinVoice(command, this.search(command, controller), "I'm not in the same voice channel :/"); // timeout = 0 no delay | timeout = -1 no leave
         return null;
     }
 
     @NotNull private Consumer<PonySearchQuerry> search(PonyPublicChatCommand command, PonyAudioGuildController controller) {
-        return search -> search.searchYoutube(command.getArguments(), new AudioResultHandler(controller, command));
+        return search -> search.searchYoutube(command.getArguments());
     }
 }
