@@ -9,11 +9,9 @@ import io.schark.pony.core.feat.audio.handler.PonyQueueHandler;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
 
 public class AudioResultHandler extends PonyAudioResultHandler<PonyChatCommand> {
-    PonyAudioGuildController controller;
 
     public AudioResultHandler(PonyAudioGuildController controller, PonyChatCommand command) {
         super(controller, command);
-        this.controller = controller;
     }
 
     @Override public void trackLoaded(PonyChatCommand command, AudioTrack audioTrack) {
@@ -21,11 +19,16 @@ public class AudioResultHandler extends PonyAudioResultHandler<PonyChatCommand> 
         //command.answer("playing track");
     }
 
+    @Override public void queueTrackLoaded(PonyChatCommand command, AudioTrack audioTrack) {
+
+    }
+
     @Override
     public void playlistLoaded(PonyChatCommand command, AudioPlaylist audioPlaylist) {
-        if (this.controller.getQueueHandler() == null) {
-            PonyQueueHandler handler = new PonyQueueHandler(this.getAudioPlayer(), audioPlaylist.getTracks(), this.controller);
-            this.controller.loadQueueHandler(handler);
+        if (this.getController().getQueue() == null) {
+            PonyQueueHandler handler = new PonyQueueHandler(this.getAudioPlayer(), this.getController());
+            handler.addNewPlayList(audioPlaylist.getTracks());
+            this.getController().setQueue(handler);
             handler.nextTrack();
         }
 
@@ -38,5 +41,9 @@ public class AudioResultHandler extends PonyAudioResultHandler<PonyChatCommand> 
 
     @Override public void loadFailed(PonyChatCommand command, FriendlyException e) {
         command.answer("loading failed");
+    }
+
+    @Override protected void queueLoadFailed(PonyChatCommand command, FriendlyException e) {
+
     }
 }
