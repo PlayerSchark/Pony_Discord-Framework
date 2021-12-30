@@ -35,7 +35,9 @@ public class VoiceLeaveListener extends ListenerAdapter {
         if (e.getMember().getIdLong() == Pony.getInstance().getPonyBot().getId() || e.getMember().getIdLong() == this.testBotID) {
             if (e.getNewValue().getMembers().size() == 1) {
                 PonyAudioGuildController controller = PonyManagerType.AUDIO.manager().getController(e.getMember().getGuild());
-                controller.voiceTimeout();
+                if (controller.getGuildManager().isConnected()) {
+                    controller.voiceTimeout();
+                }
             }
         }
     }
@@ -46,7 +48,9 @@ public class VoiceLeaveListener extends ListenerAdapter {
         }
         if (members.size() == 1) {
             PonyAudioGuildController controller = PonyManagerType.AUDIO.manager().getController(leftMember.getGuild());
-            controller.voiceTimeout();
+            if (controller.getGuildManager().isConnected()) {
+                controller.voiceTimeout();
+            }
         }
     }
 }
