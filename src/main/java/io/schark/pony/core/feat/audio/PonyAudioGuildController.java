@@ -163,6 +163,8 @@ public class PonyAudioGuildController {
             return false;
         }
         this.guildManager.closeAudioConnection();
+        this.channel = null;
+        this.timeouts = new long[0];
         return true;
     }
 
