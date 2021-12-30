@@ -13,6 +13,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+/**
+ * @author Player_Slimey
+ */
 @Getter
 public class PonyManagerAudio extends PonyManager {
 

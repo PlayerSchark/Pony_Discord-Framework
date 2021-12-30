@@ -1,10 +1,8 @@
 package io.schark.pony.core.feat.audio;
 
 import com.google.common.base.Joiner;
-import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
 import io.schark.pony.Pony;
 import io.schark.pony.core.PonyManagerType;
-import io.schark.pony.core.feat.audio.handler.PonyAudioResultHandler;
 import io.schark.pony.core.feat.commands.in.PonyArg;
 import io.schark.pony.exception.MusicSearchException;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +18,12 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @author Player_Schark
+ */
 @RequiredArgsConstructor
 public class PonySearchQuerry {
-	private final AudioPlayerManager audioPlayerManager;
+	private final PonyAudioGuildController controller;
 	private static SpotifyApi spotifyApi;
 
 	private static void protocolCheck(String url) {
@@ -42,20 +43,21 @@ public class PonySearchQuerry {
 		}
 	}
 
-	public void searchYoutubeUrl(String url, PonyAudioResultHandler handler) {
+	public void searchYoutubeUrl(String url) {
 		PonySearchQuerry.protocolCheck(url);
 		PonySearchQuerry.regexCheck(PonyManagerAudio::getYoutubeRegex, url);
-		this.searchYoutube(url, handler);
+		this.searchYoutube(url);
 	}
 
-	public void searchYoutube(String querry, PonyAudioResultHandler handler) {
-		String uri = "ytsearch:" + querry;
+	public void searchYoutube(String querry) {
+		String prefix = PonySearchQuerry.regexMatch(PonyManagerAudio::getYoutubeRegex, querry) ? "" : "ytsearch:";
+		String uri = prefix + querry;
 		System.out.println("Loading youtube uri " + uri);
-		this.audioPlayerManager.loadItem(uri, handler);
+		this.controller.loadItem(uri);
 		System.out.println("Youtube uri " + uri + " loaded");
 	}
 
-	public void searchYoutube(List<PonyArg<String>> args, PonyAudioResultHandler handler) {
+	public void searchYoutube(List<PonyArg<String>> args) {
 		String querry = null;
 		for (PonyArg<String> arg : args) {
 			Matcher matcher = PonyManagerType.AUDIO.manager().getYoutubeRegex().matcher(arg.getContent());
@@ -66,7 +68,7 @@ public class PonySearchQuerry {
 		}
 
 		querry = querry != null ? querry : this.joinArgs(args);
-		this.searchYoutube(querry, handler);
+		this.searchYoutube(querry);
 	}
 
 	private String joinArgs(List<PonyArg<String>> args) {
@@ -83,9 +85,8 @@ public class PonySearchQuerry {
 	 * searches a spotify track and uses youtube to load songs
 	 *
 	 * @param uri     can be trackId spotify uri or url
-	 * @param handler result handler
 	 */
-	public void searchSpotify(String uri, PonyAudioResultHandler handler) {
+	public void searchSpotify(String uri) {
 		SpotifyApi spotifyApi = this.getSpotifyApi();
 		Track track;
 		try {
@@ -95,7 +96,7 @@ public class PonySearchQuerry {
 			e.printStackTrace();
 			throw new MusicSearchException("Could not send request to spotify.");
 		}
-		this.searchYoutubeUrl(track.getName(), handler);
+		this.searchYoutubeUrl(track.getName());
 	}
 
 	private SpotifyApi getSpotifyApi() {

@@ -5,22 +5,31 @@ import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import io.schark.pony.core.feat.audio.PonyAudioGuildController;
 import io.schark.pony.core.feat.audio.handler.PonyAudioResultHandler;
+import io.schark.pony.core.feat.audio.handler.PonyQueueHandler;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
 
 public class AudioResultHandler extends PonyAudioResultHandler<PonyChatCommand> {
+    PonyAudioGuildController controller;
 
     public AudioResultHandler(PonyAudioGuildController controller, PonyChatCommand command) {
         super(controller, command);
+        this.controller = controller;
     }
 
     @Override public void trackLoaded(PonyChatCommand command, AudioTrack audioTrack) {
         this.playTrack(audioTrack);
-        command.answer("playing track");
+        //command.answer("playing track");
     }
 
-    @Override public void playlistLoaded(PonyChatCommand command, AudioPlaylist audioPlaylist) {
-        this.playTrack(audioPlaylist.getTracks(), new PlayListHandler());
-        command.answer("playing playlist track 1");
+    @Override
+    public void playlistLoaded(PonyChatCommand command, AudioPlaylist audioPlaylist) {
+        if (this.controller.getQueueHandler() == null) {
+            PonyQueueHandler handler = new PonyQueueHandler(this.getAudioPlayer(), audioPlaylist.getTracks(), this.controller);
+            this.controller.loadQueueHandler(handler);
+            handler.nextTrack();
+        }
+
+        command.answer("playing playlist");
     }
 
     @Override public void noMatches(PonyChatCommand command) {
