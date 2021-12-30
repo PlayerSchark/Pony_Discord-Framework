@@ -1,31 +1,22 @@
 package io.schark.pny.example.commands;
 
-import io.schark.pny.example.MyRoleEnum;
-import io.schark.pony.core.feat.commands.annotation.Alias;
-import io.schark.pony.core.feat.commands.annotation.impl.PonyAccessor;
-import io.schark.pony.core.feat.commands.command.PonyCommand;
-import io.schark.pony.core.feat.commands.executor.PonyChatCommandExecutor;
-import io.schark.pony.core.feat.commands.executor.PonyCommandExecutor;
+import com.google.common.base.Joiner;
+import io.schark.pony.core.feat.commands.command.PonyChatCommand;
+import io.schark.pony.core.feat.commands.executor.input.PonyChatCommandExecutor;
+
+import java.util.List;
 
 /**
  * @author Player_Schark
  */
-public class SayCommand extends PonyChatCommandExecutor implements PonyAccessor {
+public class SayCommand extends PonyChatCommandExecutor {
 
-	@Alias(aliases = {"tell", "announce", "sai"})
-	//@AllowedRoles(ids = 15L)
 	public SayCommand() {
-		super("say");
+		super("say", "wiederholt alles was du schreibst :)", true);
 	}
 
-	@Override public String execute(PonyCommand command) {
-		return null;
-	}
-
-	@Override public Long[] getIds(PonyCommandExecutor executor) {
-		return new Long[] {
-			MyRoleEnum.ADMIN.getId(),
-			MyRoleEnum.MOD.getId()
-		};
+	@Override public String executeCommand(PonyChatCommand command) {
+		List<String> rawArguments = command.getRawArguments();
+		return Joiner.on(" ").join(rawArguments);
 	}
 }
