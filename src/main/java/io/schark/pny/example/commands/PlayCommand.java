@@ -2,7 +2,7 @@ package io.schark.pny.example.commands;
 
 import io.schark.pny.example.AudioResultHandler;
 import io.schark.pony.core.feat.audio.PonyAudioGuildController;
-import io.schark.pony.core.feat.audio.PonySearchQuerry;
+import io.schark.pony.core.feat.audio.PonySearchQuery;
 import io.schark.pony.core.feat.commands.annotation.Alias;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
 import io.schark.pony.core.feat.commands.command.PonyPublicChatCommand;
@@ -26,7 +26,7 @@ public class PlayCommand extends PonyChatCommandExecutor {
         return null;
     }
 
-    @NotNull private Consumer<PonySearchQuerry> search(PonyPublicChatCommand command, PonyAudioGuildController controller) {
+    @NotNull private Consumer<PonySearchQuery> search(PonyPublicChatCommand command, PonyAudioGuildController controller) {
         return search -> search.searchYoutube(command.getArguments());
     }
 }

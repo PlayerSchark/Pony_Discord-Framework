@@ -22,13 +22,13 @@ import java.util.regex.Pattern;
  * @author Player_Schark
  */
 @RequiredArgsConstructor
-public class PonySearchQuerry {
+public class PonySearchQuery {
 	private final PonyAudioGuildController controller;
 	private static SpotifyApi spotifyApi;
 
 	private static void protocolCheck(String url) {
 		if (!url.startsWith("http://") && !url.startsWith("https://")) {
-			throw new MusicSearchException("The querry must start with 'http(s)://'");
+			throw new MusicSearchException("The query must start with 'http(s)://'");
 		}
 	}
 
@@ -38,37 +38,37 @@ public class PonySearchQuerry {
 	}
 
 	private static void regexCheck(Function<PonyManagerAudio, Pattern> regex, String url) {
-		if (!PonySearchQuerry.regexMatch(regex, url)) {
-			throw new MusicSearchException("The querry is no valid url");
+		if (!PonySearchQuery.regexMatch(regex, url)) {
+			throw new MusicSearchException("The query is no valid url");
 		}
 	}
 
 	public void searchYoutubeUrl(String url) {
-		PonySearchQuerry.protocolCheck(url);
-		PonySearchQuerry.regexCheck(PonyManagerAudio::getYoutubeRegex, url);
+		PonySearchQuery.protocolCheck(url);
+		PonySearchQuery.regexCheck(PonyManagerAudio::getYoutubeRegex, url);
 		this.searchYoutube(url);
 	}
 
-	public void searchYoutube(String querry) {
-		String prefix = PonySearchQuerry.regexMatch(PonyManagerAudio::getYoutubeRegex, querry) ? "" : "ytsearch:";
-		String uri = prefix + querry;
+	public void searchYoutube(String query) {
+		String prefix = PonySearchQuery.regexMatch(PonyManagerAudio::getYoutubeRegex, query) ? "" : "ytsearch:";
+		String uri = prefix + query;
 		System.out.println("Loading youtube uri " + uri);
 		this.controller.loadItem(uri);
 		System.out.println("Youtube uri " + uri + " loaded");
 	}
 
 	public void searchYoutube(List<PonyArg<String>> args) {
-		String querry = null;
+		String query = null;
 		for (PonyArg<String> arg : args) {
 			Matcher matcher = PonyManagerType.AUDIO.manager().getYoutubeRegex().matcher(arg.getContent());
 			if (matcher.find()) {
-				querry = matcher.group();
+				query = matcher.group();
 				break;
 			}
 		}
 
-		querry = querry != null ? querry : this.joinArgs(args);
-		this.searchYoutube(querry);
+		query = query != null ? query : this.joinArgs(args);
+		this.searchYoutube(query);
 	}
 
 	private String joinArgs(List<PonyArg<String>> args) {
