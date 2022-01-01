@@ -1,7 +1,10 @@
 package io.schark.pony.core.feat.audio;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioLoadResultHandler;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayerManager;
+import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
+import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import io.schark.pony.core.PonyBot;
@@ -272,7 +275,28 @@ public final class PonyAudioGuildController {
         this.audioPlayerManager.loadItem(info.getIdentifier(), this.resultHandler);
     }
 
-    public synchronized void loadItem(String uri) {
-        this.audioPlayerManager.loadItem(uri, this.resultHandler);
+    public synchronized void loadItem(String uri, boolean isPlaylist) {
+        this.audioPlayerManager.loadItem(uri, new AudioLoadResultHandler() {
+            @Override public void trackLoaded(AudioTrack audioTrack) {
+                PonyAudioGuildController.this.resultHandler.trackLoaded(audioTrack);
+            }
+
+            @Override public void playlistLoaded(AudioPlaylist audioPlaylist) {
+                if (isPlaylist) {
+                    PonyAudioGuildController.this.resultHandler.playlistLoaded(audioPlaylist);
+                }
+                else {
+                    PonyAudioGuildController.this.resultHandler.trackLoaded(audioPlaylist.getTracks().get(0));
+                }
+            }
+
+            @Override public void noMatches() {
+                PonyAudioGuildController.this.resultHandler.noMatches();
+            }
+
+            @Override public void loadFailed(FriendlyException e) {
+                PonyAudioGuildController.this.resultHandler.loadFailed(e);
+            }
+        });
     }
 }

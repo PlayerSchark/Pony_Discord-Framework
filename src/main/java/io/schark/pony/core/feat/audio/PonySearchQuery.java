@@ -50,10 +50,11 @@ public class PonySearchQuery {
 	}
 
 	public void searchYoutube(String query) {
-		String prefix = PonySearchQuery.regexMatch(PonyManagerAudio::getYoutubeRegex, query) ? "" : "ytsearch:";
+		boolean isUrl = PonySearchQuery.regexMatch(PonyManagerAudio::getYoutubeRegex, query);
+		String prefix = isUrl ? "" : "ytsearch:";
 		String uri = prefix + query;
 		System.out.println("Loading youtube uri " + uri);
-		this.controller.loadItem(uri);
+		this.controller.loadItem(uri, isUrl);
 		System.out.println("Youtube uri " + uri + " loaded");
 	}
 

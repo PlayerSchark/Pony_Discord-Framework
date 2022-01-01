@@ -21,7 +21,6 @@ public class PonyQueueHandler {
 	private final PonyAudioGuildController controller;
 	private Deque<AudioTrackInfo> audioTracks;
 	@Setter private AudioTrackInfo currentInfo;
-	//@Setter private AudioTrack currentTrack;
 	@Setter private boolean loop;
 	@Setter private boolean queueLoop;
 
@@ -48,6 +47,9 @@ public class PonyQueueHandler {
 	}
 
 	public synchronized void nextTrack() {
+		if (!this.isLoop() && this.isQueueLoop()) {
+			this.audioTracks.add(this.currentInfo);
+		}
 		boolean loop = this.isLoop();
 		AudioTrackInfo nextTrack = loop
 						? this.getCurrentInfo()
@@ -55,9 +57,6 @@ public class PonyQueueHandler {
 		String asString = nextTrack == null ? "null" : (nextTrack.title + ":" + nextTrack.identifier);
 		System.out.println("load next: " + asString);
 		this.loadTrack(nextTrack);
-		if (!loop && this.isQueueLoop()) {
-			this.audioTracks.add(nextTrack);
-		}
 	}
 
 	public synchronized void nextTrackAndBreakAllLoop() {
@@ -105,6 +104,6 @@ public class PonyQueueHandler {
 	}
 
 	public boolean hasNext() {
-		return this.isLoop() || this.audioTracks.iterator().hasNext();
+		return this.isLoop() || this.isQueueLoop() && this.currentInfo != null || this.audioTracks.iterator().hasNext();
 	}
 }
