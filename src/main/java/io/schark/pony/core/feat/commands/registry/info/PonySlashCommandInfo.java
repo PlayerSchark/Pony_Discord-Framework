@@ -9,7 +9,7 @@ import io.schark.pony.core.feat.commands.registry.wrapper.PonyAnnotationWrapper;
 public class PonySlashCommandInfo extends PonyDiscordCommandInfo<PonySlashCommandExecutable> {
 
 	public PonySlashCommandInfo(PonySlashCommandExecutable executable, PonyAnnotationWrapper wrapper, boolean botUsable,
-					boolean caseSensitive, boolean blacklisted, boolean sendThinking, boolean ephemeral) {
+                              boolean caseSensitive, boolean blacklisted, boolean sendThinking, boolean ephemeral) {
 		super(executable, wrapper, botUsable, caseSensitive, blacklisted, sendThinking, ephemeral);
 	}
 }

@@ -4,10 +4,10 @@ import io.schark.pony.Pony;
 import io.schark.pony.core.PonyManager;
 import io.schark.pony.core.PonyManagerType;
 import io.schark.pony.core.feat.PonyManagerListener;
+import io.schark.pony.exception.CommandRegisterException;
 import io.schark.pony.core.feat.commands.listener.PonyChatCommandListener;
 import io.schark.pony.core.feat.commands.listener.PonyDiscordCommandListener;
 import io.schark.pony.core.feat.commands.registry.PonyCommandRegistry;
-import io.schark.pony.exception.CommandRegisterException;
 import lombok.Getter;
 import net.dv8tion.jda.api.JDA;
 

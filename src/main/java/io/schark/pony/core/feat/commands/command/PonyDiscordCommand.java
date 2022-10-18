@@ -5,8 +5,6 @@ import io.schark.pony.core.feat.commands.in.PonyGuildArg;
 import lombok.Getter;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
-import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.interaction.SlashCommandEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 
 import java.util.List;
@@ -20,7 +18,7 @@ public class PonyDiscordCommand extends PonyCommand<SlashCommandEvent, PonyGuild
 	private final InteractionHook hook;
 
 	public PonyDiscordCommand(SlashCommandEvent e, Member sender, InteractionHook hook, MessageChannel channel,
-					PonyChatLabel label, List<PonyGuildArg<?>> args) {
+														PonyChatLabel label, List<PonyGuildArg<?>> args) {
 		super(e, sender, channel, label, args);
 		this.hook = hook;
 	}

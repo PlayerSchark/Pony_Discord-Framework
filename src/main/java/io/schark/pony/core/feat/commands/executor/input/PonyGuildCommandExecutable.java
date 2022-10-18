@@ -1,8 +1,8 @@
 package io.schark.pony.core.feat.commands.executor.input;
 
-import io.schark.pony.core.feat.commands.annotation.impl.PonyAccessor;
 import io.schark.pony.core.feat.commands.command.PonyDiscordCommand;
 import io.schark.pony.core.feat.commands.command.PonyGuildCommand;
+import io.schark.pony.core.feat.commands.annotation.impl.PonyAccessor;
 
 /**
  * @author Player_Schark

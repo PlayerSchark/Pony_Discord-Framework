@@ -1,8 +1,8 @@
 package io.schark.pony.core.feat.commands.registry.info;
 
-import io.schark.pony.core.feat.commands.annotation.impl.PonyRunnable;
 import io.schark.pony.core.feat.commands.executor.PonyCommandExecutable;
 import io.schark.pony.core.feat.commands.executor.input.PonyChatCommandExecutor;
+import io.schark.pony.core.feat.commands.annotation.impl.PonyRunnable;
 import io.schark.pony.core.feat.commands.registry.wrapper.PonyAnnotationWrapper;
 import io.schark.pony.core.feat.commands.registry.wrapper.WrapperType;
 import lombok.RequiredArgsConstructor;

@@ -3,8 +3,8 @@ package io.schark.pony.core.feat.commands.executor.input;
 import io.schark.pony.core.feat.commands.command.PonyChatCommand;
 import io.schark.pony.core.feat.commands.command.PonyCommand;
 import io.schark.pony.core.feat.commands.command.PonyGuildCommand;
-import io.schark.pony.core.feat.commands.executor.PonyCommandExecutor;
 import io.schark.pony.core.feat.commands.in.PonyArg;
+import io.schark.pony.core.feat.commands.executor.PonyCommandExecutor;
 import lombok.Getter;
 import net.dv8tion.jda.api.events.Event;
 

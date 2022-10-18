@@ -2,10 +2,10 @@ package io.schark.pony.core.feat.commands.listener;
 
 import io.schark.pony.core.feat.commands.PonyManagerCommand;
 import io.schark.pony.core.feat.commands.command.PonyGuildCommand;
-import io.schark.pony.core.feat.commands.executor.input.PonyDiscordCommandExecutor;
 import io.schark.pony.core.feat.commands.in.PonyChatLabel;
 import io.schark.pony.core.feat.commands.in.PonyGuildArg;
 import io.schark.pony.core.feat.commands.registry.PonyCommandRegistry;
+import io.schark.pony.core.feat.commands.executor.input.PonyDiscordCommandExecutor;
 import io.schark.pony.core.feat.commands.registry.info.PonyDiscordCommandInfo;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
@@ -69,14 +69,14 @@ public class PonyDiscordCommandListener extends ListenerAdapter {
 		JDA jda = this.manager.getJda();
 		String content = mapping.getAsString();
 		return switch (type) {
-			case BOOLEAN -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsBoolean());
-			case INTEGER -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsLong());
-			case MENTIONABLE, CHANNEL -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsMentionable());
-			case NUMBER -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsDouble());
-			case ROLE -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsRole());
-			case STRING, SUB_COMMAND, SUB_COMMAND_GROUP -> new PonyGuildArg<>(jda, mapping, content, content);
-			case UNKNOWN -> new PonyGuildArg<>(jda, mapping, content, mapping);
-			case USER -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsMember() == null ? mapping.getAsUser() : mapping.getAsMember());
+			case OptionType.BOOLEAN -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsBoolean());
+			case OptionType.INTEGER -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsLong());
+			case OptionType.MENTIONABLE, OptionType.CHANNEL -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsMentionable());
+			case OptionType.NUMBER -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsDouble());
+			case OptionType.ROLE -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsRole());
+			case OptionType.STRING, OptionType.SUB_COMMAND, OptionType.SUB_COMMAND_GROUP -> new PonyGuildArg<>(jda, mapping, content, content);
+			case OptionType.UNKNOWN -> new PonyGuildArg<>(jda, mapping, content, mapping);
+			case OptionType.USER -> new PonyGuildArg<>(jda, mapping, content, mapping.getAsMember() == null ? mapping.getAsUser() : mapping.getAsMember());
 		};
 	}
 }

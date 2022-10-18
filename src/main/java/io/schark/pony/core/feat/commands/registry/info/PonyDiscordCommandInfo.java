@@ -16,10 +16,10 @@ public class PonyDiscordCommandInfo<E extends PonyDiscordCommandExecutable> exte
 	private boolean ephemeral;
 
 	public PonyDiscordCommandInfo(E executable, PonyAnnotationWrapper wrapper, boolean botUsable,
-					boolean caseSensitive,
-					boolean blacklisted,
-					boolean sendThinking,
-					boolean ephemeral) {
+                                boolean caseSensitive,
+                                boolean blacklisted,
+                                boolean sendThinking,
+                                boolean ephemeral) {
 		super(executable, wrapper, botUsable, false, caseSensitive, blacklisted);
 		this.sendThinking = sendThinking;
 		this.ephemeral = ephemeral;

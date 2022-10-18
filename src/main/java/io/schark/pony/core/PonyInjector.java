@@ -1,7 +1,7 @@
 package io.schark.pony.core;
 
-import io.schark.pony.exception.PonyStartException;
 import io.schark.pony.utils.PonyUtils;
+import io.schark.pony.exception.PonyStartException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.dv8tion.jda.api.JDA;
