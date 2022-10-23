@@ -13,7 +13,7 @@ repositories {
 }
 
 dependencies {
-    implementation("net.dv8tion:JDA:5.0.0-alpha.21") {
+    implementation("net.dv8tion:JDA:4.4.0_350") {
         exclude module: 'opus-java'
     }
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
@@ -21,6 +21,8 @@ dependencies {
     implementation 'org.projectlombok:lombok:1.18.22'
     implementation 'com.sedmelluq:lavaplayer:1.3.77'
     implementation("com.google.guava:guava:31.1-jre")
+    implementation 'se.michaelthelin.spotify:spotify-web-api-java:7.2.2'
+    implementation 'org.reflections:reflections:0.10.2'
 }
 
 jar {
@@ -29,6 +31,10 @@ jar {
     from {
         configurations.runtimeClasspath.findAll { it.name.endsWith('jar') }.collect { zipTree(it) }
     }
+}
+
+tasks.withType(JavaCompile).each {
+    it.options.compilerArgs.add('--enable-preview')
 }
 
 test {
